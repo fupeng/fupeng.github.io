@@ -1,0 +1,53 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>直播</title>
+  <meta name="description" content="thetascope">
+</head>
+<body>
+
+  <div class="webrtc-id"></div>
+  <video id="theta-video" autoplay muted="true" style="display:none"></video>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/three.min.js"></script>
+  <script src="js/OrbitControls.js"></script>
+
+  <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
+  <script src="js/ThetaView.js"></script>
+  <script>
+window.addEventListener( 'DOMContentLoaded', video_init('theta-video','001'), false );
+var peer;
+function video_init(video_id, cardboard_id) {
+  var idd = Math.floor(Math.random()*1000);
+  peer = new Peer("theta"+idd,{ key: '180ef0ae-99ea-400c-8be9-996cf34eff23'});
+  peer.on('open', function(id) {
+    $('div.webrtc-id').html("<a href='cardboard.html?id="+id+"' target=_blank>click to view</a>");
+  });
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || window.navigator.mozGetUserMedia;
+  window.URL = window.URL || window.webkitURL;
+  video = document.getElementById( video_id );
+  video.autoplay = true;
+  var option = {
+    video: { mandatory:{ minWidth: 1280 } }
+  }
+
+  var localsteam = null;
+  peer.on('call', function(call) {
+    call.answer(localsteam);
+  });
+  navigator.getUserMedia(option,
+    function(stream) {
+      localsteam =  stream;
+      video.src = window.URL.createObjectURL(stream);
+    },
+    function(err) {
+      console.log('Failed to set local stream or complete call' ,err);
+    }
+  );
+  theta_view();
+}
+  </script>     
+</body>
+</html>
