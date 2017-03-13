@@ -5,8 +5,9 @@
   <title>眼镜直播后台</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="Content-Language" content="en-us">
-  <link href="fancy.css" rel="stylesheet" type="text/css">
   <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="materialize.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="materialize.min.css" media="screen,projection" />
   <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
   <script>
 var peer = new Peer({
@@ -39,7 +40,6 @@ function connect(c) {
     var chatbox = $('<div></div>').addClass('connection').addClass('active').attr('id', c.peer);
     var header = $('<h1></h1>').html('通话：<strong>' + c.peer + '</strong>');
     var messages = $('<div><em>已经建立连接.</em></div>').addClass('messages');
-    chatbox.append(header);
     chatbox.append(messages);
 
     // Select connection handler.
@@ -177,44 +177,44 @@ window.onunload = window.onbeforeunload = function(e) {
   }
 };
 </script>
+<style>
+  .myvideo {
+  width: 100%;
+  height:100% ;
+  background-color: #FFFFFF;
+  }
+</style>
 </head>
 <body>
-    <div>
-    <button>放大</button>
-    <button>缩小</button>
-    <button>截图</button>
-    <button>录像</button>
-    <button>标注</button>
-  </div>
-  <table border="1">
-    <tr>
-      <td>
-        <div class="webrtc-id" id="my-id"></div>
-        <video id="theta-video" class="myvideo"></video>
-      </td>
-      <td>
-        <div id="actions">
+  <div class="container">
+<div class="col s12"> </div>
+<div class="nav-wrapper">
+  <button class="btn">放大</button>
+  <button class="btn">缩小</button>
+  <button class="btn">截图</button>
+  <button class="btn">录像</button>
+  <button class="btn">标注</button>
+</div>
+<div class="col s12">          
           当前ID：<span id="pid"></span><br>
-          连接到: <input type="text" id="rid" placeholder="远程ID" size="30" readonly>
-          <input class="button" type="button" value="建立连接" id="connect"><br><br>
-
+          连接到: <span id="target_id"></span>
+</div>
+ <div class="row">
+      <div class="col s6">
+          <video id="theta-video" class="myvideo"></video>
+      </div>
+      <div class="col s6">
           <form id="send">
-            <input type="text" id="text" placeholder="Enter message" size="80"><input class="button" type="submit" value="发送信息">
+          <input type="text" id="text" size="40"><input class="button" type="submit" value="发送信息">
           </form>
-        </div>
-
-        <div id="wrap">
+          <div id="wrap">
           <div id="connections"><span class="filler">没有连接</span></div>
           <div class="clear"></div>
-        </div>
-      </td>
-    </tr>
-  </table>
-  <!--<div class="warning browser">
-    <div class="important">Your browser version: <span id="browsers"></span><br> Currently <strong>Google Chrome 52+ or Mozilla Firefox 47+</strong>      is required.</strong>
-    </div>
-    <div class="log" id="log" style="color:#FF7500;text-shadow:none;padding:15px;background:#eee"><strong>Connection status</strong>:<br></div>
-  </div>-->
+          </div>
+      </div>
+  </div>
+</div>
+
   <script>
   var params = {};
   if (location.search) {
@@ -228,14 +228,25 @@ window.onunload = window.onbeforeunload = function(e) {
   }
   window.addEventListener( 'DOMContentLoaded', video_init('theta-video',params['id']), false );
 
-
+var target_id = null;
 function video_init(video_id, cardboard_id) {
-  $('#rid').val(cardboard_id);
+  target_id = cardboard_id;
+  $('#target_id').text(cardboard_id);
   var idd = Math.floor(Math.random()*1000);
   peer = new Peer("viewer"+idd,{ key: '180ef0ae-99ea-400c-8be9-996cf34eff23', debug: 0});
   peer.on('open', function(id) {
-    $('#my-id').text(id);
+    console.log('peer open'+cardboard_id);
+      var c = peer.connect(cardboard_id, {
+        label: 'chat',
+        serialization:'binary',
+        metadata: {message: 'from_web'}
+      });
+      c.on('open', function() {
+        connect(c);
+      });
+      c.on('error', function(err) { alert(err); });
   });
+
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || window.navigator.mozGetUserMedia;
   window.URL = window.URL || window.webkitURL;
   video = document.getElementById( video_id );
@@ -259,5 +270,6 @@ function video_init(video_id, cardboard_id) {
   </script>
 </body>
 </html>
+
 
 
