@@ -8,13 +8,6 @@
   <link href="fancy.css" rel="stylesheet" type="text/css">
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="https://skyway.io/dist/0.3/peer.js"></script>
-  <style>
-    .myvideo {
-      width: 640px;
-      height:480px ;
-      background-color: #FF7500;
-  }
-  </style>
   <script>
 var peer = new Peer({
   key: '180ef0ae-99ea-400c-8be9-996cf34eff23',
@@ -115,7 +108,7 @@ $(document).ready(function() {
       var c = peer.connect(requestedPeer, {
         label: 'chat',
         serialization:'binary',
-        metadata: {message: 'This is from web'}
+        metadata: {message: 'from_web'}
       });
       c.on('open', function() {
         connect(c);
@@ -194,22 +187,18 @@ window.onunload = window.onbeforeunload = function(e) {
       </td>
       <td>
         <div id="actions">
-          当前ID：<span id="pid"></span><br> 连接到: <input type="text" id="rid" placeholder="远程ID" size="30"><input class="button"
-            type="button" value="建立连接" id="connect"><br><br>
+          当前ID：<span id="pid"></span><br>
+          连接到: <input type="text" id="rid" placeholder="远程ID" size="30" readonly>
+          <input class="button" type="button" value="建立连接" id="connect"><br><br>
 
           <form id="send">
             <input type="text" id="text" placeholder="Enter message" size="80"><input class="button" type="submit" value="发送信息">
           </form>
-          <button id="close">关闭连接</button>
         </div>
 
         <div id="wrap">
           <div id="connections"><span class="filler">没有连接</span></div>
           <div class="clear"></div>
-        </div>
-
-        <div id="box" style="background: #fff; font-size: 18px;padding:40px 30px; text-align: center;">
-          拖放发送文件
         </div>
       </td>
     </tr>
@@ -254,24 +243,6 @@ function video_init(video_id, cardboard_id) {
       call.on('stream', function(stream) {
         video.src = window.URL.createObjectURL(stream);
       });
-//for getstat
-  call.peerConnection.getStats(function(report) {
-        var rtcStatsReports = report.result();
-        for (var i=0; i<rtcStatsReports.length; i++) {
-            var statNames = rtcStatsReports[i].names();
-
-                for (var j=0; j<statNames.length; j++) {
-                    var statName = statNames[j];
-                    var statValue = rtcStatsReports[i].stat(statName);
-
-                    if(statName == "audioOutputLevel"){
-                    }
-                    if(statName == "audioInputLevel"){
-                    }
-                  }
-        }
-    });
-
     },
     function(err) {
       console.log('Failed to set local stream or complete call' ,err);
@@ -279,9 +250,7 @@ function video_init(video_id, cardboard_id) {
   );
 }
   </script>
-
-
 </body>
-
 </html>
+
 
