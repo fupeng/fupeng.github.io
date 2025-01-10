@@ -1,1 +1,0 @@
-Ricoh Theta S + WEBRTC
