@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <script>self["MonacoEnvironment"] = (function (paths) {
+          return {
+            globalAPI: false,
+            getWorkerUrl : function (moduleId, label) {
+              var result =  paths[label];
+              if (/^((http:)|(https:)|(file:)|(\/\/))/.test(result)) {
+                var currentUrl = String(window.location);
+                var currentOrigin = currentUrl.substr(0, currentUrl.length - window.location.hash.length - window.location.search.length - window.location.pathname.length);
+                if (result.substring(0, currentOrigin.length) !== currentOrigin) {
+                  var js = '/*' + label + '*/importScripts("' + result + '");';
+                  var blob = new Blob([js], { type: 'application/javascript' });
+                  return URL.createObjectURL(blob);
+                }
+              }
+              return result;
+            }
+          };
+        })({
+  "editorWorkerService": "/monacoeditorwork/editor.worker.bundle.js",
+  "typescript": "/monacoeditorwork/ts.worker.bundle.js",
+  "javascript": "/monacoeditorwork/ts.worker.bundle.js"
+});</script>
+
+  <meta charset="UTF-8" />
+  <link rel="icon"
+    href="https://user-images.githubusercontent.com/55899582/231488871-e83fb827-1b25-4ec9-a326-b14244677e87.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Deobfuscate, unminify and unpack bundled javascript">
+  <meta property="og:title" content="webcrack">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://webcrack.netlify.app">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="webcrack">
+  <meta name="twitter:description" content="Deobfuscate, unminify and unpack bundled javascript">
+  <title>webcrack</title>
+  <script type="module" crossorigin src="/assets/index-CJp6xM_X.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/monaco-editor-BuW4iEkJ.js">
+  <link rel="stylesheet" crossorigin href="/assets/monaco-editor-Dww9I0gI.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-BVoraqK7.css">
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
+
+</html>
