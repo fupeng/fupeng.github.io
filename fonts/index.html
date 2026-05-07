@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InsightFlow - AI 用户反馈验证平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: "#4F6EF7",
+            pagebg: "#F7F8FC",
+            ink: "#101828",
+            muted: "#667085",
+            line: "#E6E8F0",
+          },
+          boxShadow: {
+            soft: "0 10px 40px rgba(15, 23, 42, 0.08)",
+            panel: "0 12px 32px rgba(79, 110, 247, 0.10)",
+          },
+          borderRadius: {
+            "2xl": "1.25rem",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --brand: #4F6EF7;
+      --page-bg: #F7F8FC;
+      --line: #E6E8F0;
+      --ink: #101828;
+      --muted: #667085;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      background: var(--page-bg);
+      color: var(--ink);
+    }
+    .page {
+      display: none;
+      min-height: 100vh;
+    }
+    .page.active {
+      display: block;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(16px);
+    }
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 8px 30px rgba(16, 24, 40, 0.05);
+    }
+    .gradient-orb::before,
+    .gradient-orb::after {
+      content: "";
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(48px);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .gradient-orb::before {
+      width: 260px;
+      height: 260px;
+      right: 5%;
+      top: 8%;
+      background: rgba(79, 110, 247, 0.18);
+    }
+    .gradient-orb::after {
+      width: 200px;
+      height: 200px;
+      left: 8%;
+      bottom: 10%;
+      background: rgba(129, 140, 248, 0.12);
+    }
+    .sidebar-item.active {
+      background: rgba(79, 110, 247, 0.10);
+      color: var(--brand);
+      border-color: rgba(79, 110, 247, 0.18);
+    }
+    .wizard-step.active .step-dot {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+    .wizard-step.done .step-dot {
+      background: rgba(79, 110, 247, 0.16);
+      color: var(--brand);
+      border-color: rgba(79, 110, 247, 0.2);
+    }
+    .wizard-template.active,
+    .upload-tab.active,
+    .survey-option.active,
+    .segment-tab.active,
+    .summary-tab.active {
+      border-color: var(--brand);
+      background: rgba(79, 110, 247, 0.08);
+      color: var(--brand);
+    }
+    .survey-screen {
+      display: none;
+    }
+    .survey-screen.active {
+      display: block;
+    }
+    .chat-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-scroll::-webkit-scrollbar-thumb {
+      background: #d5daf0;
+      border-radius: 999px;
+    }
+    .toast {
+      animation: slideIn 0.25s ease-out;
+    }
+    .fade-out {
+      animation: fadeOut 0.2s ease-in forwards;
+    }
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+    }
+    .quote-detail,
+    .theme-detail,
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active,
+    .quote-detail.open,
+    .theme-detail.open {
+      display: block;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateY(12px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="page-landing" class="page active">
+    <div class="relative overflow-hidden gradient-orb min-h-screen">
+      <header class="px-6 lg:px-10 pt-6">
+        <nav class="mx-auto max-w-7xl glass border border-white/70 rounded-2xl px-5 py-4 flex items-center justify-between shadow-soft">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center font-bold">IF</div>
+            <span class="text-2xl font-bold text-brand">InsightFlow</span>
+          </div>
+          <div class="hidden md:flex items-center gap-8 text-sm text-slate-600">
+            <button class="hover:text-brand">产品功能</button>
+            <button class="hover:text-brand">定价</button>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="showPage('page-projects')" class="px-4 py-2 rounded-xl text-slate-700 hover:bg-slate-100">登录</button>
+            <button onclick="showPage('page-projects')" class="px-4 py-2 rounded-xl bg-brand text-white shadow-panel">免费注册</button>
+          </div>
+        </nav>
+      </header>
+
+      <main class="px-6 lg:px-10 pb-16">
+        <section class="mx-auto max-w-7xl grid lg:grid-cols-[1.1fr_0.9fr] gap-12 pt-16 lg:pt-20 items-center">
+          <div>
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-100 bg-white/80 text-sm text-brand mb-6">
+              <span class="w-2 h-2 rounded-full bg-brand"></span>
+              数小时内完成高质量用户验证
+            </div>
+            <h1 class="text-5xl lg:text-6xl font-bold tracking-tight leading-tight text-slate-950">AI 用户反馈验证平台</h1>
+            <p class="mt-6 text-lg lg:text-xl text-slate-600 leading-8 max-w-2xl">用真实用户 + AI 动态追问，数小时内完成产品验证，直接输出可执行结论</p>
+            <div class="mt-8 flex flex-wrap gap-4">
+              <button onclick="showPage('page-projects')" class="px-6 py-3 rounded-2xl bg-brand text-white text-base font-medium shadow-panel">免费开始</button>
+              <button onclick="showPage('page-projects')" class="px-6 py-3 rounded-2xl bg-white border border-line text-slate-700 text-base font-medium">查看演示</button>
+            </div>
+            <div class="mt-10 grid sm:grid-cols-3 gap-4">
+              <div class="panel p-5">
+                <div class="text-2xl mb-4">🚀</div>
+                <h3 class="font-semibold text-lg mb-2">发起验证项目</h3>
+                <p class="text-sm text-slate-600 leading-6">5分钟配置，支持概念/页面/原型/文案多种测试类型</p>
+              </div>
+              <div class="panel p-5">
+                <div class="text-2xl mb-4">🤖</div>
+                <h3 class="font-semibold text-lg mb-2">AI 动态追问</h3>
+                <p class="text-sm text-slate-600 leading-6">基于用户回答智能追问，挖掘真实动机与困惑</p>
+              </div>
+              <div class="panel p-5">
+                <div class="text-2xl mb-4">📊</div>
+                <h3 class="font-semibold text-lg mb-2">自动生成分析报告</h3>
+                <p class="text-sm text-slate-600 leading-6">AI 自动聚类主题，输出高管摘要与行动建议</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel p-8 lg:p-10 bg-white/90">
+            <div class="rounded-3xl bg-slate-950 text-white p-8 relative overflow-hidden">
+              <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(79,110,247,0.28),transparent_40%)]"></div>
+              <div class="relative">
+                <div class="text-sm text-indigo-200 mb-3">热门场景</div>
+                <div class="grid gap-4">
+                  <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+                    <div class="font-semibold">产品经理</div>
+                    <div class="text-sm text-slate-300 mt-2">快速验证新首页、原型与核心价值表达是否清晰</div>
+                  </div>
+                  <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+                    <div class="font-semibold">增长团队</div>
+                    <div class="text-sm text-slate-300 mt-2">低成本跑文案与转化路径验证，减少盲目上线</div>
+                  </div>
+                  <div class="rounded-2xl bg-white/8 border border-white/10 p-4">
+                    <div class="font-semibold">电商团队</div>
+                    <div class="text-sm text-slate-300 mt-2">测试商品首屏与卖点表达，明确最影响转化的因素</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <div class="text-lg font-semibold mb-4">登录 InsightFlow</div>
+              <div class="space-y-4">
+                <input type="email" placeholder="邮箱地址" class="w-full rounded-2xl border border-line bg-slate-50 px-4 py-3 outline-none focus:border-brand" />
+                <input type="password" placeholder="密码" class="w-full rounded-2xl border border-line bg-slate-50 px-4 py-3 outline-none focus:border-brand" />
+                <button onclick="showPage('page-projects')" class="w-full rounded-2xl bg-brand text-white py-3 font-medium">登录</button>
+                <button onclick="showPage('page-projects')" class="text-sm text-brand hover:underline">还没有账号？免费注册</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="page-projects" class="page">
+    <div class="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
+      <aside class="bg-white border-r border-line px-5 py-6 flex flex-col">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center font-bold">IF</div>
+          <span class="text-2xl font-bold text-brand">InsightFlow</span>
+        </div>
+        <nav class="space-y-2 text-[15px]">
+          <button onclick="showPage('page-projects')" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left">📋 我的项目</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">📚 模板库</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">⚙️ 设置</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">👤 账户</button>
+        </nav>
+        <div class="mt-auto border border-line rounded-2xl p-4 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-100 text-brand font-semibold flex items-center justify-center">张</div>
+            <div>
+              <div class="font-medium">张明</div>
+              <div class="text-xs text-slate-500">管理员</div>
+            </div>
+          </div>
+          <button onclick="showPage('page-landing')" class="text-sm text-slate-500 hover:text-brand">退出</button>
+        </div>
+      </aside>
+
+      <main class="p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 class="text-3xl font-bold">你好，张明 👋</h2>
+              <p class="text-slate-600 mt-2">这里是你的验证项目总览，优先处理高价值结论。</p>
+            </div>
+            <button onclick="openWizard()" class="px-5 py-3 rounded-2xl bg-brand text-white font-medium shadow-panel">+ 新建项目</button>
+          </div>
+
+          <section class="mt-8 grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="panel p-5">
+              <div class="text-sm text-slate-500">总项目数</div>
+              <div class="mt-3 text-3xl font-bold">4</div>
+            </div>
+            <div class="panel p-5">
+              <div class="text-sm text-slate-500">进行中</div>
+              <div class="mt-3 text-3xl font-bold text-amber-500">1</div>
+            </div>
+            <div class="panel p-5">
+              <div class="text-sm text-slate-500">已完成</div>
+              <div class="mt-3 text-3xl font-bold text-emerald-600">2</div>
+            </div>
+            <div class="panel p-5">
+              <div class="text-sm text-slate-500">草稿</div>
+              <div class="mt-3 text-3xl font-bold text-slate-500">1</div>
+            </div>
+          </section>
+
+          <section class="mt-8 grid lg:grid-cols-2 gap-5">
+            <div class="panel p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-semibold">新版首页改版测试 - 2026 Q2</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full bg-indigo-50 text-brand text-sm">页面测试</span>
+                    <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm">已完成</span>
+                  </div>
+                </div>
+                <button class="w-10 h-10 rounded-xl border border-line text-slate-400">···</button>
+              </div>
+              <div class="mt-5 grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <div class="text-slate-500">样本数</div>
+                  <div class="font-semibold mt-1">47人</div>
+                </div>
+                <div>
+                  <div class="text-slate-500">完成率</div>
+                  <div class="font-semibold mt-1">89%</div>
+                </div>
+                <div>
+                  <div class="text-slate-500">创建时间</div>
+                  <div class="font-semibold mt-1">2026-04-10</div>
+                </div>
+              </div>
+              <div class="mt-4">
+                <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div class="h-full bg-brand rounded-full" style="width: 89%;"></div>
+                </div>
+              </div>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button onclick="showPage('page-analysis')" class="px-4 py-2 rounded-xl bg-brand text-white text-sm">查看分析</button>
+                <button onclick="showToast('分享链接已生成')" class="px-4 py-2 rounded-xl border border-line text-sm">分享</button>
+                <button onclick="showPage('page-survey'); resetSurvey();" class="px-4 py-2 rounded-xl border border-line text-sm text-brand">预览受访者视图</button>
+              </div>
+            </div>
+
+            <div class="panel p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-semibold">定价页文案 A/B 测试</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-sm">文案测试</span>
+                    <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm">进行中</span>
+                  </div>
+                </div>
+                <button class="w-10 h-10 rounded-xl border border-line text-slate-400">···</button>
+              </div>
+              <div class="mt-5 grid grid-cols-3 gap-3 text-sm">
+                <div><div class="text-slate-500">样本数</div><div class="font-semibold mt-1">23人</div></div>
+                <div><div class="text-slate-500">完成率</div><div class="font-semibold mt-1">61%</div></div>
+                <div><div class="text-slate-500">创建时间</div><div class="font-semibold mt-1">2026-04-18</div></div>
+              </div>
+              <div class="mt-4"><div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-amber-400 rounded-full" style="width: 61%;"></div></div></div>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button onclick="showPage('page-analysis')" class="px-4 py-2 rounded-xl bg-brand text-white text-sm">查看分析</button>
+                <button onclick="showToast('分享链接已生成')" class="px-4 py-2 rounded-xl border border-line text-sm">分享</button>
+                <button class="px-4 py-2 rounded-xl border border-line text-sm">···</button>
+              </div>
+            </div>
+
+            <div class="panel p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-semibold">注册流程原型测试</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-sm">原型测试</span>
+                    <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-sm">草稿</span>
+                  </div>
+                </div>
+                <button class="w-10 h-10 rounded-xl border border-line text-slate-400">···</button>
+              </div>
+              <div class="mt-5 grid grid-cols-3 gap-3 text-sm">
+                <div><div class="text-slate-500">样本数</div><div class="font-semibold mt-1">0人</div></div>
+                <div><div class="text-slate-500">完成率</div><div class="font-semibold mt-1">0%</div></div>
+                <div><div class="text-slate-500">创建时间</div><div class="font-semibold mt-1">2026-04-20</div></div>
+              </div>
+              <div class="mt-4"><div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-300 rounded-full" style="width: 0%;"></div></div></div>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button onclick="openWizard()" class="px-4 py-2 rounded-xl border border-line text-sm">继续编辑</button>
+                <button onclick="showToast('草稿已分享')" class="px-4 py-2 rounded-xl border border-line text-sm">分享</button>
+                <button class="px-4 py-2 rounded-xl border border-line text-sm">···</button>
+              </div>
+            </div>
+
+            <div class="panel p-6">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-xl font-semibold">新功能概念验证 - AI 追问</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-3 py-1 rounded-full bg-cyan-50 text-cyan-700 text-sm">概念测试</span>
+                    <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm">已完成</span>
+                  </div>
+                </div>
+                <button class="w-10 h-10 rounded-xl border border-line text-slate-400">···</button>
+              </div>
+              <div class="mt-5 grid grid-cols-3 gap-3 text-sm">
+                <div><div class="text-slate-500">样本数</div><div class="font-semibold mt-1">31人</div></div>
+                <div><div class="text-slate-500">完成率</div><div class="font-semibold mt-1">94%</div></div>
+                <div><div class="text-slate-500">创建时间</div><div class="font-semibold mt-1">2026-03-28</div></div>
+              </div>
+              <div class="mt-4"><div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width: 94%;"></div></div></div>
+              <div class="mt-5 flex flex-wrap gap-3">
+                <button onclick="showPage('page-analysis')" class="px-4 py-2 rounded-xl bg-brand text-white text-sm">查看分析</button>
+                <button onclick="showToast('分享链接已生成')" class="px-4 py-2 rounded-xl border border-line text-sm">分享</button>
+                <button class="px-4 py-2 rounded-xl border border-line text-sm">···</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div id="wizard-modal" class="hidden fixed inset-0 z-40 modal-backdrop px-4 py-8 overflow-y-auto">
+      <div class="max-w-5xl mx-auto panel p-0 overflow-hidden">
+        <div class="px-6 lg:px-8 py-5 border-b border-line flex items-center justify-between">
+          <div>
+            <div class="text-2xl font-bold">新建验证项目</div>
+            <div class="text-sm text-slate-500 mt-1">通过五步完成项目配置与发布</div>
+          </div>
+          <button onclick="closeWizard()" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500">×</button>
+        </div>
+
+        <div class="px-6 lg:px-8 py-5 border-b border-line">
+          <div class="grid grid-cols-5 gap-3 text-center text-xs lg:text-sm">
+            <div class="wizard-step active" data-step="1"><div class="step-dot mx-auto w-9 h-9 rounded-full border border-line flex items-center justify-center mb-2">1</div><div>选择模板</div></div>
+            <div class="wizard-step" data-step="2"><div class="step-dot mx-auto w-9 h-9 rounded-full border border-line flex items-center justify-center mb-2">2</div><div>基础信息</div></div>
+            <div class="wizard-step" data-step="3"><div class="step-dot mx-auto w-9 h-9 rounded-full border border-line flex items-center justify-center mb-2">3</div><div>上传素材</div></div>
+            <div class="wizard-step" data-step="4"><div class="step-dot mx-auto w-9 h-9 rounded-full border border-line flex items-center justify-center mb-2">4</div><div>AI 追问</div></div>
+            <div class="wizard-step" data-step="5"><div class="step-dot mx-auto w-9 h-9 rounded-full border border-line flex items-center justify-center mb-2">5</div><div>发布确认</div></div>
+          </div>
+        </div>
+
+        <div class="px-6 lg:px-8 py-6">
+          <div class="wizard-panel" data-step="1">
+            <div class="text-xl font-semibold mb-5">选择项目模板</div>
+            <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4">
+              <button class="wizard-template active text-left panel p-4 border-brand" onclick="selectTemplate(this, '页面测试')">
+                <div class="text-2xl mb-4">🖥️</div><div class="font-semibold">页面测试</div><div class="text-sm text-slate-500 mt-2">适合官网、落地页、首屏验证</div>
+              </button>
+              <button class="wizard-template text-left panel p-4" onclick="selectTemplate(this, '概念测试')">
+                <div class="text-2xl mb-4">💡</div><div class="font-semibold">概念测试</div><div class="text-sm text-slate-500 mt-2">验证新功能或新产品方向</div>
+              </button>
+              <button class="wizard-template text-left panel p-4" onclick="selectTemplate(this, '原型测试')">
+                <div class="text-2xl mb-4">🧩</div><div class="font-semibold">原型测试</div><div class="text-sm text-slate-500 mt-2">适合流程、交互、可用性反馈</div>
+              </button>
+              <button class="wizard-template text-left panel p-4" onclick="selectTemplate(this, '文案/创意测试')">
+                <div class="text-2xl mb-4">✍️</div><div class="font-semibold">文案/创意测试</div><div class="text-sm text-slate-500 mt-2">测试标题、卖点、广告创意</div>
+              </button>
+              <button class="wizard-template text-left panel p-4" onclick="selectTemplate(this, '自定义')">
+                <div class="text-2xl mb-4">⚙️</div><div class="font-semibold">自定义</div><div class="text-sm text-slate-500 mt-2">按你的研究目标自由配置</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="wizard-panel hidden" data-step="2">
+            <div class="text-xl font-semibold mb-5">填写基础信息</div>
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2">项目名称</label>
+                <input id="wizard-project-name" value="新版首页改版测试 - 2026 Q2" class="w-full rounded-2xl border border-line px-4 py-3 bg-slate-50 outline-none focus:border-brand" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium mb-2">测试目标</label>
+                <textarea id="wizard-goal" class="w-full rounded-2xl border border-line px-4 py-3 bg-slate-50 outline-none focus:border-brand h-28">验证新版官网首屏是否能让目标用户快速理解产品价值</textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">目标用户描述</label>
+                <input value="产品 / 运营 / 增长从业者，关注官网表达与产品理解" class="w-full rounded-2xl border border-line px-4 py-3 bg-slate-50 outline-none focus:border-brand" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">期望样本量</label>
+                <input type="number" value="50" class="w-full rounded-2xl border border-line px-4 py-3 bg-slate-50 outline-none focus:border-brand" />
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-panel hidden" data-step="3">
+            <div class="text-xl font-semibold mb-5">上传测试素材</div>
+            <div class="flex flex-wrap gap-3 mb-5">
+              <button class="upload-tab active px-4 py-2 rounded-xl border border-line" onclick="selectUploadTab(this, '图片')">图片</button>
+              <button class="upload-tab px-4 py-2 rounded-xl border border-line" onclick="selectUploadTab(this, '文案')">文案</button>
+              <button class="upload-tab px-4 py-2 rounded-xl border border-line" onclick="selectUploadTab(this, 'URL')">URL</button>
+              <button class="upload-tab px-4 py-2 rounded-xl border border-line" onclick="selectUploadTab(this, 'A-B多版本')">A-B多版本</button>
+            </div>
+            <div class="border-2 border-dashed border-line rounded-[28px] p-10 text-center bg-slate-50">
+              <div class="text-4xl mb-4">☁️</div>
+              <div class="text-lg font-semibold">拖拽素材到这里或点击上传</div>
+              <div class="text-sm text-slate-500 mt-2">支持图片、截图、文案、链接和多版本方案</div>
+              <button onclick="showToast('已模拟上传成功')" class="mt-5 px-5 py-3 rounded-2xl bg-white border border-line">模拟上传</button>
+            </div>
+          </div>
+
+          <div class="wizard-panel hidden" data-step="4">
+            <div class="text-xl font-semibold mb-5">配置 AI 动态追问</div>
+            <div class="grid md:grid-cols-2 gap-5">
+              <div class="panel p-5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-semibold">开启 AI 追问</div>
+                    <div class="text-sm text-slate-500 mt-1">根据用户回答进行动态追问</div>
+                  </div>
+                  <button id="ai-toggle" onclick="toggleAi(this)" class="relative w-14 h-8 rounded-full bg-brand">
+                    <span class="absolute right-1 top-1 w-6 h-6 rounded-full bg-white"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="panel p-5">
+                <div class="font-semibold">追问轮数</div>
+                <input id="round-slider" type="range" min="2" max="3" value="3" class="w-full mt-4 accent-brand" oninput="document.getElementById('round-value').textContent = this.value + ' 轮'" />
+                <div id="round-value" class="text-sm text-brand mt-3">3 轮</div>
+              </div>
+              <div class="md:col-span-2 panel p-5">
+                <div class="font-semibold mb-3">访谈语气</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option tone-option active px-4 py-2 rounded-xl border border-line" onclick="singleActive(this, '.tone-option')" data-group="tone">专业</button>
+                  <button class="survey-option tone-option px-4 py-2 rounded-xl border border-line" onclick="singleActive(this, '.tone-option')" data-group="tone">友好</button>
+                  <button class="survey-option tone-option px-4 py-2 rounded-xl border border-line" onclick="singleActive(this, '.tone-option')" data-group="tone">简洁</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-panel hidden" data-step="5">
+            <div class="text-xl font-semibold mb-5">发布确认</div>
+            <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-5">
+              <div class="panel p-5">
+                <div class="text-sm text-slate-500">项目摘要</div>
+                <div class="mt-4 space-y-3 text-sm">
+                  <div class="flex justify-between gap-4"><span>项目名称</span><span class="font-medium" id="summary-project-name">新版首页改版测试 - 2026 Q2</span></div>
+                  <div class="flex justify-between gap-4"><span>测试类型</span><span class="font-medium" id="summary-template">页面测试</span></div>
+                  <div class="flex justify-between gap-4"><span>AI 追问</span><span class="font-medium">已开启 / 3 轮</span></div>
+                  <div class="flex justify-between gap-4"><span>预计样本量</span><span class="font-medium">50 人</span></div>
+                </div>
+                <div class="mt-5">
+                  <label class="block text-sm font-medium mb-2">分享链接</label>
+                  <div class="flex gap-3">
+                    <input value="https://insightflow.app/share/if-2026-q2-demo" class="flex-1 rounded-2xl border border-line px-4 py-3 bg-slate-50 outline-none" />
+                    <button onclick="showToast('链接已复制到剪贴板')" class="px-4 py-3 rounded-2xl border border-line">复制</button>
+                  </div>
+                </div>
+              </div>
+              <div class="panel p-5">
+                <div class="text-sm text-slate-500 mb-4">邀请二维码</div>
+                <div class="w-44 h-44 rounded-3xl border border-line bg-[linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%,#111),linear-gradient(45deg,#111_25%,transparent_25%,transparent_75%,#111_75%,#111)] bg-[length:24px_24px] bg-[position:0_0,12px_12px] mx-auto"></div>
+                <button onclick="publishProject()" class="mt-6 w-full rounded-2xl bg-brand text-white py-3 font-medium">立即发布</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 lg:px-8 py-5 border-t border-line flex items-center justify-between">
+          <button id="wizard-prev" onclick="changeWizardStep(-1)" class="px-5 py-3 rounded-2xl border border-line text-slate-600">上一步</button>
+          <button id="wizard-next" onclick="changeWizardStep(1)" class="px-5 py-3 rounded-2xl bg-brand text-white">下一步</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-survey" class="page">
+    <div class="min-h-screen bg-white">
+      <header class="border-b border-line px-4 lg:px-8 py-4 sticky top-0 bg-white/90 backdrop-blur z-20">
+        <div class="max-w-4xl mx-auto flex items-center gap-4">
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center font-bold">IF</div>
+            <span class="text-2xl font-bold text-brand">InsightFlow</span>
+          </div>
+          <div class="flex-1">
+            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div id="survey-progress" class="h-full bg-brand rounded-full transition-all duration-300" style="width: 12.5%;"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 lg:px-8 py-8">
+        <section id="screen-1" class="survey-screen active">
+          <div class="panel p-8 lg:p-12 text-center">
+            <div class="inline-flex px-4 py-2 rounded-full bg-indigo-50 text-brand text-sm mb-6">页面测试</div>
+            <h1 class="text-4xl font-bold">新版首页改版测试 - 2026 Q2</h1>
+            <p class="mt-5 text-lg text-slate-600 leading-8">我们想了解您对新版官网首屏的第一印象，帮助我们优化产品表达</p>
+            <div class="mt-8 inline-flex items-center gap-6 text-slate-600 text-sm bg-slate-50 rounded-2xl px-6 py-4">
+              <span>预计时长：5-10分钟</span>
+              <span>匿名参与</span>
+              <span>AI 动态追问</span>
+            </div>
+            <div class="mt-10">
+              <button onclick="goSurveyScreen(2)" class="px-8 py-4 rounded-2xl bg-brand text-white text-lg font-medium shadow-panel">开始</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-2" class="survey-screen">
+          <div class="panel p-8 lg:p-10">
+            <div class="text-2xl font-bold mb-8">基础信息</div>
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <div class="font-medium mb-3">年龄段</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">18-24</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line active" onclick="activateChoice(this)">25-34</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">35-44</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">45+</button>
+                </div>
+              </div>
+              <div>
+                <div class="font-medium mb-3">性别</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line active" onclick="activateChoice(this)">男</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">女</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">不愿透露</button>
+                </div>
+              </div>
+              <div>
+                <div class="font-medium mb-3">城市级别</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line active" onclick="activateChoice(this)">一线</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">新一线</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">二线及以下</button>
+                </div>
+              </div>
+              <div>
+                <div class="font-medium mb-3">是否目标用户</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line active" onclick="activateChoice(this)">是，我是产品/运营/增长从业者</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">否，其他职业</button>
+                </div>
+              </div>
+              <div class="md:col-span-2">
+                <div class="font-medium mb-3">产品使用经验</div>
+                <div class="flex flex-wrap gap-3">
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">完全没用过</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line active" onclick="activateChoice(this)">偶尔使用</button>
+                  <button class="survey-option px-4 py-2 rounded-xl border border-line" onclick="activateChoice(this)">经常使用</button>
+                </div>
+              </div>
+            </div>
+            <div class="mt-10 text-right">
+              <button onclick="goSurveyScreen(3)" class="px-6 py-3 rounded-2xl bg-brand text-white">下一步</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-3" class="survey-screen">
+          <div class="panel p-8">
+            <div class="text-2xl font-bold">请仔细查看以下页面内容</div>
+            <div class="mt-8 rounded-[28px] border border-line overflow-hidden bg-slate-100 shadow-soft">
+              <div class="h-12 bg-slate-200 px-5 flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-300"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-300"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-300"></span>
+                <div class="ml-4 px-4 py-1 bg-white rounded-full text-sm text-slate-500">www.demo-site.com</div>
+              </div>
+              <div class="bg-white p-6 lg:p-10">
+                <div class="flex items-center justify-between mb-10">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center font-bold">D</div>
+                    <div class="font-semibold">DataPulse</div>
+                  </div>
+                  <div class="hidden md:flex items-center gap-6 text-sm text-slate-600">
+                    <span>产品能力</span>
+                    <span>解决方案</span>
+                    <span>客户案例</span>
+                    <button class="px-4 py-2 rounded-xl bg-brand text-white">立即试用</button>
+                  </div>
+                </div>
+                <div class="grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
+                  <div>
+                    <div class="text-sm text-brand bg-indigo-50 inline-flex px-3 py-1 rounded-full">产品决策平台</div>
+                    <h3 class="mt-5 text-4xl font-bold leading-tight">让数据驱动每一个产品决策</h3>
+                    <p class="mt-4 text-slate-600 leading-7">统一采集用户行为、调研反馈与业务数据，帮助团队更快确认方向。</p>
+                    <button class="mt-6 px-5 py-3 rounded-2xl bg-brand text-white">免费开始</button>
+                  </div>
+                  <div class="grid grid-cols-1 gap-4">
+                    <div class="rounded-2xl border border-line p-4">
+                      <div class="font-semibold">实时洞察</div>
+                      <div class="text-sm text-slate-500 mt-2">整合多源数据，一屏查看关键问题</div>
+                    </div>
+                    <div class="rounded-2xl border border-line p-4">
+                      <div class="font-semibold">AI 总结</div>
+                      <div class="text-sm text-slate-500 mt-2">自动识别用户共性与重点问题</div>
+                    </div>
+                    <div class="rounded-2xl border border-line p-4">
+                      <div class="font-semibold">团队协作</div>
+                      <div class="text-sm text-slate-500 mt-2">同步结论、行动建议与决策依据</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-8 text-right">
+              <button onclick="startSurveyChat()" class="px-6 py-3 rounded-2xl bg-brand text-white">我看完了，继续</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-4" class="survey-screen">
+          <div class="panel p-0 overflow-hidden">
+            <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+              <div class="font-semibold">AI 深度追问</div>
+              <div id="chat-step-label-4" class="text-sm text-slate-500">第 1 轮，共 4 轮</div>
+            </div>
+            <div id="chat-area-4" class="chat-scroll h-[480px] overflow-y-auto px-5 py-5 bg-slate-50 space-y-4"></div>
+            <div class="px-5 py-4 border-t border-line bg-white">
+              <div id="chat-options-4" class="flex flex-wrap gap-3 mb-4"></div>
+              <div class="flex gap-3">
+                <input id="chat-input-4" placeholder="输入你的回答..." class="flex-1 rounded-2xl border border-line px-4 py-3 outline-none focus:border-brand" />
+                <button onclick="submitSurveyAnswer()" class="px-5 py-3 rounded-2xl bg-brand text-white">发送</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-5" class="survey-screen">
+          <div class="panel p-0 overflow-hidden">
+            <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+              <div class="font-semibold">AI 深度追问</div>
+              <div id="chat-step-label-5" class="text-sm text-slate-500">第 2 轮，共 4 轮</div>
+            </div>
+            <div id="chat-area-5" class="chat-scroll h-[480px] overflow-y-auto px-5 py-5 bg-slate-50 space-y-4"></div>
+            <div class="px-5 py-4 border-t border-line bg-white">
+              <div id="chat-options-5" class="flex flex-wrap gap-3 mb-4"></div>
+              <div class="flex gap-3">
+                <input id="chat-input-5" placeholder="输入你的回答..." class="flex-1 rounded-2xl border border-line px-4 py-3 outline-none focus:border-brand" />
+                <button onclick="submitSurveyAnswer()" class="px-5 py-3 rounded-2xl bg-brand text-white">发送</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-6" class="survey-screen">
+          <div class="panel p-0 overflow-hidden">
+            <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+              <div class="font-semibold">AI 深度追问</div>
+              <div id="chat-step-label-6" class="text-sm text-slate-500">第 3 轮，共 4 轮</div>
+            </div>
+            <div id="chat-area-6" class="chat-scroll h-[480px] overflow-y-auto px-5 py-5 bg-slate-50 space-y-4"></div>
+            <div class="px-5 py-4 border-t border-line bg-white">
+              <div id="chat-options-6" class="flex flex-wrap gap-3 mb-4"></div>
+              <div class="flex gap-3">
+                <input id="chat-input-6" placeholder="输入你的回答..." class="flex-1 rounded-2xl border border-line px-4 py-3 outline-none focus:border-brand" />
+                <button onclick="submitSurveyAnswer()" class="px-5 py-3 rounded-2xl bg-brand text-white">发送</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-7" class="survey-screen">
+          <div class="panel p-0 overflow-hidden">
+            <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+              <div class="font-semibold">AI 深度追问</div>
+              <div id="chat-step-label-7" class="text-sm text-slate-500">第 4 轮，共 4 轮</div>
+            </div>
+            <div id="chat-area-7" class="chat-scroll h-[480px] overflow-y-auto px-5 py-5 bg-slate-50 space-y-4"></div>
+            <div class="px-5 py-4 border-t border-line bg-white">
+              <div id="chat-options-7" class="flex flex-wrap gap-3 mb-4"></div>
+              <div class="flex gap-3">
+                <input id="chat-input-7" placeholder="输入你的回答..." class="flex-1 rounded-2xl border border-line px-4 py-3 outline-none focus:border-brand" />
+                <button onclick="submitSurveyAnswer()" class="px-5 py-3 rounded-2xl bg-brand text-white">发送</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-8" class="survey-screen">
+          <div class="panel p-10 lg:p-14 text-center">
+            <div class="text-6xl mb-5">✅</div>
+            <h2 class="text-4xl font-bold">感谢您的参与！</h2>
+            <p class="mt-5 text-lg text-slate-600">您的反馈将帮助团队做出更好的产品决策</p>
+            <button onclick="showPage('page-landing')" class="mt-8 px-8 py-4 rounded-2xl bg-brand text-white text-lg">返回首页</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="page-analysis" class="page">
+    <div class="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
+      <aside class="bg-white border-r border-line px-5 py-6 flex flex-col">
+        <div class="flex items-center gap-3 mb-8">
+          <div class="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center font-bold">IF</div>
+          <span class="text-2xl font-bold text-brand">InsightFlow</span>
+        </div>
+        <nav class="space-y-2 text-[15px]">
+          <button onclick="showPage('page-projects')" class="sidebar-item active w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left">📋 我的项目</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">📚 模板库</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">⚙️ 设置</button>
+          <button class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-transparent text-left text-slate-600 hover:bg-slate-50">👤 账户</button>
+        </nav>
+        <div class="mt-auto border border-line rounded-2xl p-4 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-100 text-brand font-semibold flex items-center justify-center">张</div>
+            <div><div class="font-medium">张明</div><div class="text-xs text-slate-500">管理员</div></div>
+          </div>
+          <button onclick="showPage('page-landing')" class="text-sm text-slate-500 hover:text-brand">退出</button>
+        </div>
+      </aside>
+
+      <main class="p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+          <div class="text-sm text-slate-500">我的项目 &gt; 新版首页改版测试 - 2026 Q2</div>
+          <div class="mt-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+            <div>
+              <h1 class="text-3xl font-bold">新版首页改版测试 - 2026 Q2</h1>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-full bg-indigo-50 text-brand text-sm">页面测试</span>
+                <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm">已完成</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <button onclick="showToast('分享链接已生成')" class="px-4 py-2 rounded-xl border border-line bg-white">分享</button>
+              <button onclick="showPage('page-share')" class="px-4 py-2 rounded-xl bg-brand text-white">导出</button>
+            </div>
+          </div>
+
+          <section class="mt-8 grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="panel p-5"><div class="text-sm text-slate-500">总样本数</div><div class="mt-3 text-3xl font-bold">47</div></div>
+            <div class="panel p-5"><div class="text-sm text-slate-500">完成率</div><div class="mt-3 text-3xl font-bold">89%</div><div class="mt-3 w-full h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 89%;"></div></div></div>
+            <div class="panel p-5"><div class="text-sm text-slate-500">平均时长</div><div class="mt-3 text-3xl font-bold">8分23秒</div></div>
+            <div class="panel p-5"><div class="text-sm text-slate-500">高理解比例</div><div class="mt-3 text-3xl font-bold">73%</div></div>
+          </section>
+
+          <section class="mt-8 panel p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold">AI 主题分析</h2>
+                <p class="text-slate-500 mt-2">自动聚类高频反馈主题，并支持查看原始用户表达</p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid lg:grid-cols-2 gap-5">
+              <div>
+                <div class="text-sm font-semibold text-emerald-700 mb-3">高频正向反馈</div>
+                <div class="space-y-3">
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-emerald-700">页面视觉设计专业，有信任感 — 出现 31 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“视觉很干净，整体感觉是一个靠谱的 SaaS 工具。”</div>
+                      <div>“页面专业感不错，像已经比较成熟的产品。”</div>
+                    </div>
+                  </div>
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-emerald-700">功能描述清晰，容易理解 — 出现 28 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“三个功能点很直白，理解成本不高。”</div>
+                      <div>“读完功能介绍后基本知道是做反馈分析的。”</div>
+                    </div>
+                  </div>
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-emerald-700">CTA 按钮位置合理，引导明确 — 出现 19 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“按钮放在首屏中间，能很快看到下一步动作。”</div>
+                      <div>“操作入口明显，没有让我找半天。”</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="text-sm font-semibold text-rose-700 mb-3">高频负向反馈</div>
+                <div class="space-y-3">
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-rose-700">首屏标题太抽象，不知道具体做什么 — 出现 24 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“标题太大而空，不知道是数据分析还是用户反馈。”</div>
+                      <div>“我看完首屏仍然不太确定产品解决什么问题。”</div>
+                    </div>
+                  </div>
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-rose-700">缺少真实案例或数据支撑 — 出现 17 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“如果能直接看到客户结果，会更容易相信。”</div>
+                      <div>“没有案例支撑，注册意愿会打折扣。”</div>
+                    </div>
+                  </div>
+                  <div class="mt-6 text-sm font-semibold text-amber-700 mb-3">困惑点</div>
+                  <div class="border border-line rounded-2xl p-4 mb-3">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-amber-700">不清楚与竞品的差异在哪里 — 出现 14 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“看起来像很多分析平台，不知道独特价值在哪里。”</div>
+                      <div>“我需要一个明确对比点，才知道为什么选你。”</div>
+                    </div>
+                  </div>
+                  <div class="border border-line rounded-2xl p-4">
+                    <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                      <span class="text-amber-700">价格信息不透明，不知道是否免费 — 出现 11 次</span><span class="text-slate-400">展开</span>
+                    </button>
+                    <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                      <div>“我看到了试用按钮，但不知道门槛和限制。”</div>
+                      <div>“缺少定价提示，让我注册前会犹豫。”</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="text-sm font-semibold text-brand mb-3">决策驱动因素</div>
+              <div class="grid md:grid-cols-2 gap-3">
+                <div class="border border-line rounded-2xl p-4">
+                  <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                    <span class="text-brand">是否有同行在用 — 出现 22 次</span><span class="text-slate-400">展开</span>
+                  </button>
+                  <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                    <div>“看到同行案例会直接提升信任。”</div>
+                    <div>“如果有同类团队背书，我更愿意试。”</div>
+                  </div>
+                </div>
+                <div class="border border-line rounded-2xl p-4">
+                  <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between gap-4 text-left">
+                    <span class="text-brand">是否支持团队协作 — 出现 18 次</span><span class="text-slate-400">展开</span>
+                  </button>
+                  <div class="theme-detail mt-3 text-sm text-slate-600 space-y-2">
+                    <div>“如果只是个人使用，我的购买优先级会下降。”</div>
+                    <div>“团队协作和共识沉淀是我很关心的点。”</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="mt-8 panel p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold">分群对比分析</h2>
+                <p class="text-slate-500 mt-2">查看不同人群在理解率、满意度与信任感上的差异</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button class="segment-tab active px-4 py-2 rounded-xl border border-line" onclick="switchSegment('segment-new-old', this)">新用户 vs 老用户</button>
+                <button class="segment-tab px-4 py-2 rounded-xl border border-line" onclick="switchSegment('segment-gender', this)">男 vs 女</button>
+                <button class="segment-tab px-4 py-2 rounded-xl border border-line" onclick="switchSegment('segment-city', this)">一线 vs 非一线</button>
+              </div>
+            </div>
+
+            <div id="segment-new-old" class="tab-panel active mt-6 space-y-5">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>理解率</span><span>新用户 61% vs 老用户 84%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 61%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 84%;"></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>满意度</span><span>新用户 58% vs 老用户 79%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 58%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 79%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="segment-gender" class="tab-panel mt-6 space-y-5">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>理解率</span><span>男 71% vs 女 76%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 71%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 76%;"></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>改版意愿</span><span>男 68% vs 女 72%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 68%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 72%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="segment-city" class="tab-panel mt-6 space-y-5">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>理解率</span><span>一线 78% vs 非一线 65%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 78%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 65%;"></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span>信任感</span><span>一线 74% vs 非一线 61%</span></div>
+                <div class="space-y-2">
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-brand rounded-full" style="width: 74%;"></div></div>
+                  <div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-slate-800 rounded-full" style="width: 61%;"></div></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="mt-8 panel p-6">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold">代表性原话</h2>
+                <p class="text-slate-500 mt-2">从不同样本中抽取的高代表性表达</p>
+              </div>
+            </div>
+            <div class="mt-6 grid lg:grid-cols-2 gap-4">
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“看完之后我还是不太确定这个产品具体帮我解决什么问题，标题太宽泛了”</div>
+                <div class="mt-3 text-sm text-slate-500">28岁，上海，产品经理</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：标题抽象、价值表达不够具体。建议优先处理 Hero 标题与副标题。</div>
+              </div>
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“视觉很干净，感觉是个靠谱的工具，但我需要看到真实的使用案例才会注册”</div>
+                <div class="mt-3 text-sm text-slate-500">32岁，北京，增长运营</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：视觉正向、缺少案例支撑。适合在首屏下方新增客户数据模块。</div>
+              </div>
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“我以为是数据分析工具，后来才发现是用户调研的，首屏没说清楚”</div>
+                <div class="mt-3 text-sm text-slate-500">26岁，成都，产品设计师</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：产品定位误解。说明当前标题会把人引导到错误类别。</div>
+              </div>
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“CTA 按钮很明显，但我不知道免费试用有什么限制，有点犹豫”</div>
+                <div class="mt-3 text-sm text-slate-500">35岁，深圳，产品总监</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：试用信息不足。建议在 CTA 附近增加免费试用说明。</div>
+              </div>
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“功能介绍部分写得很好，三个核心价值一目了然”</div>
+                <div class="mt-3 text-sm text-slate-500">29岁，杭州，运营经理</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：功能模块表达清晰。可保留现有结构与层级设计。</div>
+              </div>
+              <div class="border border-line rounded-2xl p-5">
+                <div class="text-base">“如果能看到一个具体的使用场景视频就更好了，光靠文字不够直观”</div>
+                <div class="mt-3 text-sm text-slate-500">31岁，广州，增长负责人</div>
+                <button onclick="toggleQuote(this)" class="mt-4 text-sm text-brand">展开详情</button>
+                <div class="quote-detail mt-3 text-sm text-slate-600">对应主题：需要更强的展示媒介。适合作为下版本优化项。</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="mt-8 panel p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-bold">AI 摘要输出</h2>
+                <p class="text-slate-500 mt-2">一键切换不同汇报形式，支持高管摘要与详细报告</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button class="summary-tab active px-4 py-2 rounded-xl border border-line" onclick="switchSummary('summary-exec', this)">1页高管摘要</button>
+                <button class="summary-tab px-4 py-2 rounded-xl border border-line" onclick="switchSummary('summary-detail', this)">详细分析报告</button>
+                <button class="summary-tab px-4 py-2 rounded-xl border border-line" onclick="switchSummary('summary-cards', this)">结论卡片</button>
+              </div>
+            </div>
+
+            <div id="summary-exec" class="tab-panel active mt-6">
+              <div class="rounded-3xl bg-slate-50 p-6 leading-8 text-slate-700">
+                本次测试共收集 47 份有效样本，完成率 89%。核心发现：73% 的受访者能在 30 秒内理解产品大致方向，但仅 41% 能准确描述核心价值主张。首屏标题“让数据驱动每一个产品决策”被认为过于抽象（24/47 人提及）。建议优先修改首屏标题，增加具体使用场景描述，并在 Hero 区加入一个真实客户案例数据。
+              </div>
+            </div>
+
+            <div id="summary-detail" class="tab-panel mt-6">
+              <div class="space-y-5 text-slate-700">
+                <div>
+                  <div class="font-semibold text-lg mb-2">研究背景</div>
+                  <p class="leading-8">本项目围绕新版官网首屏表达展开，目标是验证目标用户是否能在短时间内理解产品核心价值，并评估首屏文案、视觉与 CTA 设计对认知和转化意愿的影响。</p>
+                </div>
+                <div>
+                  <div class="font-semibold text-lg mb-2">方法论</div>
+                  <p class="leading-8">采用页面测试方式，向目标用户展示官网首屏并结合 AI 动态追问。共邀请 47 人参与，其中 42 人完整完成全部流程，平均用时 8分23秒。</p>
+                </div>
+                <div>
+                  <div class="font-semibold text-lg mb-2">关键发现</div>
+                  <p class="leading-8">1. 首屏标题存在抽象化问题，导致部分受访者误判产品类型。 2. 功能介绍区对核心能力的传达较好，是当前页面中最稳定的正向资产。 3. 缺少真实案例与试用门槛信息，削弱了注册意愿。</p>
+                </div>
+                <div>
+                  <div class="font-semibold text-lg mb-2">分群差异分析</div>
+                  <p class="leading-8">新用户的理解率与满意度显著低于老用户，说明页面当前表达更偏向已有认知人群。一线城市用户对页面专业感和信任感评价更高，非一线用户更依赖案例和直接价值说明。</p>
+                </div>
+                <div>
+                  <div class="font-semibold text-lg mb-2">改进建议</div>
+                  <p class="leading-8">1. 优先修改 Hero 标题，直接说明“帮助产品团队用真实用户验证想法”。 2. 在首屏或首屏下方增加真实客户数据与行业案例。 3. 在 CTA 附近补充试用说明，并增加演示视频入口。</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="summary-cards" class="tab-panel mt-6">
+              <div class="grid lg:grid-cols-3 gap-4">
+                <div class="rounded-3xl bg-rose-50 border border-rose-100 p-6">
+                  <div class="text-xl font-semibold text-rose-700">🔴 立即修改</div>
+                  <p class="mt-4 text-slate-700 leading-7">首屏标题需要更具体，直接说明“帮助产品团队用真实用户验证想法”。</p>
+                </div>
+                <div class="rounded-3xl bg-amber-50 border border-amber-100 p-6">
+                  <div class="text-xl font-semibold text-amber-700">🟡 下版本优化</div>
+                  <p class="mt-4 text-slate-700 leading-7">增加客户案例区块，展示真实数据，如“已帮助 500+ 团队节省 80% 调研时间”。</p>
+                </div>
+                <div class="rounded-3xl bg-emerald-50 border border-emerald-100 p-6">
+                  <div class="text-xl font-semibold text-emerald-700">🟢 保持不变</div>
+                  <p class="mt-4 text-slate-700 leading-7">视觉设计和 CTA 布局获得普遍认可，无需大改。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="page-share" class="page">
+    <div class="min-h-screen bg-pagebg px-4 lg:px-8 py-6">
+      <div class="max-w-5xl mx-auto">
+        <header class="panel px-6 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center font-bold">IF</div>
+            <span class="text-2xl font-bold text-brand">InsightFlow</span>
+          </div>
+          <div class="text-lg font-semibold text-center">新版首页改版测试 - 2026 Q2</div>
+          <div class="text-sm text-slate-500">由 InsightFlow 生成</div>
+        </header>
+
+        <section class="mt-6 panel p-8">
+          <h1 class="text-3xl font-bold mb-8">一页高管摘要</h1>
+          <div class="space-y-6 text-slate-700 leading-8">
+            <div><span class="font-semibold text-slate-950">研究目标：</span>验证新版官网首屏是否能让目标用户快速理解产品价值</div>
+            <div><span class="font-semibold text-slate-950">样本说明：</span>47名受访者，89%完成率，主要为产品/运营/增长从业者，覆盖一线及新一线城市</div>
+            <div><span class="font-semibold text-slate-950">关键发现 1：</span>73%受访者能理解产品大方向，但仅41%能准确描述核心价值</div>
+            <div><span class="font-semibold text-slate-950">关键发现 2：</span>首屏标题被24人（51%）认为过于抽象，是最大阻碍</div>
+            <div><span class="font-semibold text-slate-950">关键发现 3：</span>视觉设计和CTA获得正向评价，信任感评分7.8/10</div>
+            <div><span class="font-semibold text-slate-950">分群差异：</span>新用户理解率（61%）显著低于老用户（84%），一线城市用户理解率更高</div>
+            <div>
+              <div class="font-semibold text-slate-950 mb-2">代表性用户原话</div>
+              <div class="rounded-2xl bg-slate-50 p-4">“看完之后我还是不太确定这个产品具体帮我解决什么问题，标题太宽泛了”</div>
+              <div class="rounded-2xl bg-slate-50 p-4 mt-3">“视觉很干净，感觉是个靠谱的工具，但我需要看到真实的使用案例才会注册”</div>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-950 mb-2">行动建议</div>
+              <div>1. 【高优先级】修改首屏标题，增加具体场景描述</div>
+              <div>2. 【中优先级】Hero区增加真实客户数据或案例</div>
+              <div>3. 【低优先级】考虑增加产品演示视频入口</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mt-6 flex flex-wrap gap-4">
+          <button id="pdf-btn" onclick="exportPdf()" class="px-5 py-3 rounded-2xl bg-brand text-white">导出 PDF</button>
+          <button onclick="openPptModal()" class="px-5 py-3 rounded-2xl border border-line bg-white">导出 PPT 文本</button>
+          <button onclick="copyReadOnlyLink()" class="px-5 py-3 rounded-2xl border border-line bg-white">复制只读链接</button>
+        </section>
+
+        <section class="mt-6">
+          <button onclick="showPage('page-analysis')" class="text-sm text-brand hover:underline">返回分析页</button>
+        </section>
+      </div>
+    </div>
+
+    <div id="ppt-modal" class="hidden fixed inset-0 z-50 modal-backdrop px-4 py-8 overflow-y-auto">
+      <div class="max-w-3xl mx-auto panel overflow-hidden">
+        <div class="px-6 py-5 border-b border-line flex items-center justify-between">
+          <div>
+            <div class="text-2xl font-bold">PPT 结构化文本预览</div>
+            <div class="text-sm text-slate-500 mt-1">共 8 页，可直接复制到演示文稿</div>
+          </div>
+          <button onclick="closePptModal()" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500">×</button>
+        </div>
+        <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
+          <pre id="ppt-content" class="whitespace-pre-wrap text-sm leading-7 text-slate-700 bg-slate-50 rounded-3xl p-5">第1页｜研究目标
+验证新版官网首屏是否能让目标用户快速理解产品价值
+
+第2页｜样本说明
+47名受访者，89%完成率
+核心样本：产品 / 运营 / 增长从业者
+覆盖城市：一线及新一线为主
+
+第3页｜关键发现 1
+73%受访者能理解产品大方向
+但仅41%能准确描述核心价值
+
+第4页｜关键发现 2
+首屏标题被24人（51%）认为过于抽象
+是影响理解的最大阻碍
+
+第5页｜关键发现 3
+视觉设计与 CTA 获得正向评价
+信任感评分 7.8 / 10
+
+第6页｜分群差异
+新用户理解率 61%，老用户 84%
+一线城市用户理解率高于非一线用户
+
+第7页｜用户原话
+“看完之后我还是不太确定这个产品具体帮我解决什么问题，标题太宽泛了”
+“视觉很干净，感觉是个靠谱的工具，但我需要看到真实的使用案例才会注册”
+
+第8页｜行动建议
+1. 修改首屏标题，增加具体场景描述
+2. Hero 区增加真实客户数据或案例
+3. 增加产品演示视频入口</pre>
+        </div>
+        <div class="px-6 py-5 border-t border-line flex items-center justify-between">
+          <button onclick="copyPptText()" class="px-5 py-3 rounded-2xl bg-brand text-white">复制全部文本</button>
+          <button onclick="closePptModal()" class="px-5 py-3 rounded-2xl border border-line">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[60] space-y-3"></div>
+
+  <script>
+    const state = {
+      wizardStep: 1,
+      selectedTemplate: "页面测试",
+      surveyScreen: 1,
+      chatRound: 0,
+      chatResponses: [],
+      surveyRounds: [
+        {
+          question: "看完这个页面，你觉得它主要是做什么的？",
+          options: ["数据分析工具", "用户调研平台", "产品管理软件", "我来输入..."],
+          followUp: "收到，我先记录你的第一印象。"
+        },
+        {
+          question: "是哪一部分让你有这个印象？",
+          options: ["标题文字", "功能介绍", "整体视觉风格", "我来输入..."],
+          followUp: "这能帮助我们定位最影响理解的页面区域。"
+        },
+        {
+          question: "如果要你改一句话来描述它，你会怎么说？",
+          options: ["帮助团队做数据决策的工具", "用户反馈收集平台", "产品验证神器", "我来输入..."],
+          followUp: "很好，这类表达能帮助我们优化价值主张。"
+        },
+        {
+          question: "你觉得这个页面最需要改进的地方是什么？",
+          options: ["标题不够清晰", "缺少具体案例", "视觉层次不明显", "我来输入..."],
+          followUp: "感谢，这会直接进入团队的优化清单。"
+        }
+      ]
+    };
+
+    function showPage(pageId) {
+      document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
+      document.getElementById(pageId).classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (pageId === "page-survey") {
+        updateSurveyProgress();
+      }
+    }
+
+    function showToast(message) {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = "toast px-4 py-3 rounded-2xl bg-slate-950 text-white shadow-soft";
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add("fade-out");
+        setTimeout(() => toast.remove(), 200);
+      }, 2000);
+    }
+
+    function openWizard() {
+      document.getElementById("wizard-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      updateWizard();
+    }
+
+    function closeWizard() {
+      document.getElementById("wizard-modal").classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    function changeWizardStep(direction) {
+      const next = state.wizardStep + direction;
+      if (next < 1 || next > 5) return;
+      state.wizardStep = next;
+      updateWizard();
+    }
+
+    function updateWizard() {
+      document.querySelectorAll(".wizard-panel").forEach((panel) => {
+        panel.classList.toggle("hidden", Number(panel.dataset.step) !== state.wizardStep);
+      });
+      document.querySelectorAll(".wizard-step").forEach((step) => {
+        const num = Number(step.dataset.step);
+        step.classList.toggle("active", num === state.wizardStep);
+        step.classList.toggle("done", num < state.wizardStep);
+      });
+      document.getElementById("wizard-prev").style.visibility = state.wizardStep === 1 ? "hidden" : "visible";
+      document.getElementById("wizard-next").style.display = state.wizardStep === 5 ? "none" : "inline-flex";
+      syncWizardSummary();
+    }
+
+    function selectTemplate(el, template) {
+      state.selectedTemplate = template;
+      document.querySelectorAll(".wizard-template").forEach((item) => item.classList.remove("active", "border-brand"));
+      el.classList.add("active", "border-brand");
+      syncWizardSummary();
+    }
+
+    function selectUploadTab(el) {
+      document.querySelectorAll(".upload-tab").forEach((tab) => tab.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    function toggleAi(button) {
+      const enabled = button.classList.contains("bg-brand");
+      button.classList.toggle("bg-brand", !enabled);
+      button.classList.toggle("bg-slate-300", enabled);
+      const knob = button.querySelector("span");
+      knob.classList.toggle("right-1", !enabled);
+      knob.classList.toggle("left-1", enabled);
+      showToast(enabled ? "已关闭 AI 追问" : "已开启 AI 追问");
+    }
+
+    function singleActive(el, selector) {
+      document.querySelectorAll(selector).forEach((item) => item.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    function syncWizardSummary() {
+      const projectName = document.getElementById("wizard-project-name");
+      if (projectName) {
+        document.getElementById("summary-project-name").textContent = projectName.value || "未命名项目";
+      }
+      document.getElementById("summary-template").textContent = state.selectedTemplate;
+    }
+
+    function publishProject() {
+      showToast("项目已发布，邀请链接已生成");
+      closeWizard();
+    }
+
+    function goSurveyScreen(screenNum) {
+      state.surveyScreen = screenNum;
+      document.querySelectorAll(".survey-screen").forEach((screen) => screen.classList.remove("active"));
+      document.getElementById(`screen-${screenNum}`).classList.add("active");
+      updateSurveyProgress();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function updateSurveyProgress() {
+      const progressMap = {
+        1: 12.5,
+        2: 25,
+        3: 37.5,
+        4: 50,
+        5: 62.5,
+        6: 75,
+        7: 87.5,
+        8: 100
+      };
+      const width = progressMap[state.surveyScreen] || 12.5;
+      document.getElementById("survey-progress").style.width = width + "%";
+    }
+
+    function resetSurvey() {
+      state.chatRound = 0;
+      state.chatResponses = [];
+      [4, 5, 6, 7].forEach((num) => {
+        document.getElementById(`chat-area-${num}`).innerHTML = "";
+        document.getElementById(`chat-options-${num}`).innerHTML = "";
+        document.getElementById(`chat-input-${num}`).value = "";
+      });
+      goSurveyScreen(1);
+    }
+
+    function startSurveyChat() {
+      state.chatRound = 0;
+      state.chatResponses = [];
+      document.getElementById("chat-area").innerHTML = "";
+      goSurveyScreen(4);
+      renderCurrentChatRound();
+    }
+
+    function renderCurrentChatRound() {
+      const round = state.surveyRounds[state.chatRound];
+      const currentScreen = getCurrentChatScreen();
+      document.getElementById(`chat-step-label-${currentScreen}`).textContent = `第 ${state.chatRound + 1} 轮，共 4 轮`;
+      addChatMessage("ai", round.question);
+      const optionsWrap = document.getElementById(`chat-options-${currentScreen}`);
+      optionsWrap.innerHTML = "";
+      round.options.forEach((option) => {
+        const btn = document.createElement("button");
+        btn.className = "px-4 py-2 rounded-xl border border-line bg-white hover:border-brand";
+        btn.textContent = option;
+        btn.onclick = () => {
+          if (option === "我来输入...") {
+            document.getElementById(`chat-input-${currentScreen}`).focus();
+            return;
+          }
+          processSurveyAnswer(option);
+        };
+        optionsWrap.appendChild(btn);
+      });
+      setSurveyInternalScreen();
+    }
+
+    function setSurveyInternalScreen() {
+      const screenMap = [4, 5, 6, 7];
+      state.surveyScreen = screenMap[state.chatRound] || 4;
+      updateSurveyProgress();
+    }
+
+    function addChatMessage(role, text) {
+      const area = document.getElementById(`chat-area-${getCurrentChatScreen()}`);
+      const row = document.createElement("div");
+      row.className = `flex ${role === "user" ? "justify-end" : "justify-start"}`;
+      row.innerHTML = role === "user"
+        ? `<div class="max-w-[78%] rounded-2xl rounded-br-md bg-brand text-white px-4 py-3">${text}</div>`
+        : `<div class="max-w-[78%] flex gap-3 items-start">
+            <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-sm font-semibold">AI</div>
+            <div class="rounded-2xl rounded-bl-md bg-white border border-line px-4 py-3 text-slate-700">${text}</div>
+          </div>`;
+      area.appendChild(row);
+      area.scrollTop = area.scrollHeight;
+    }
+
+    function submitSurveyAnswer() {
+      const input = document.getElementById(`chat-input-${getCurrentChatScreen()}`);
+      const value = input.value.trim();
+      if (!value) {
+        showToast("请输入回答或选择一个选项");
+        return;
+      }
+      processSurveyAnswer(value);
+      input.value = "";
+    }
+
+    function getCurrentChatScreen() {
+      return 4 + state.chatRound;
+    }
+
+    function activateChoice(button) {
+      const group = button.parentElement;
+      group.querySelectorAll(".survey-option").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+    }
+
+    function processSurveyAnswer(answer) {
+      const round = state.surveyRounds[state.chatRound];
+      state.chatResponses.push(answer);
+      addChatMessage("user", answer);
+      setTimeout(() => {
+        addChatMessage("ai", round.followUp);
+        setTimeout(() => {
+          state.chatRound += 1;
+          if (state.chatRound >= state.surveyRounds.length) {
+            goSurveyScreen(8);
+            return;
+          }
+          renderCurrentChatRound();
+        }, 500);
+      }, 250);
+    }
+
+    function toggleTheme(button) {
+      const detail = button.parentElement.querySelector(".theme-detail");
+      const label = button.querySelector("span:last-child");
+      detail.classList.toggle("open");
+      label.textContent = detail.classList.contains("open") ? "收起" : "展开";
+    }
+
+    function switchSegment(panelId, button) {
+      document.querySelectorAll(".segment-tab").forEach((tab) => tab.classList.remove("active"));
+      button.classList.add("active");
+      ["segment-new-old", "segment-gender", "segment-city"].forEach((id) => {
+        document.getElementById(id).classList.toggle("active", id === panelId);
+      });
+    }
+
+    function toggleQuote(button) {
+      const detail = button.parentElement.querySelector(".quote-detail");
+      detail.classList.toggle("open");
+      button.textContent = detail.classList.contains("open") ? "收起详情" : "展开详情";
+    }
+
+    function switchSummary(panelId, button) {
+      document.querySelectorAll(".summary-tab").forEach((tab) => tab.classList.remove("active"));
+      button.classList.add("active");
+      ["summary-exec", "summary-detail", "summary-cards"].forEach((id) => {
+        document.getElementById(id).classList.toggle("active", id === panelId);
+      });
+    }
+
+    function exportPdf() {
+      const btn = document.getElementById("pdf-btn");
+      const original = btn.textContent;
+      btn.textContent = "生成中...";
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+        showToast("PDF 已生成，请查收邮件");
+      }, 1500);
+    }
+
+    function openPptModal() {
+      document.getElementById("ppt-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closePptModal() {
+      document.getElementById("ppt-modal").classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    async function copyReadOnlyLink() {
+      const text = "https://insightflow.app/read-only/if-2026-q2-summary";
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        console.warn(error);
+      }
+      showToast("链接已复制到剪贴板");
+    }
+
+    async function copyPptText() {
+      const text = document.getElementById("ppt-content").innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        console.warn(error);
+      }
+      showToast("PPT 文本已复制");
+    }
+
+    document.addEventListener("click", (event) => {
+      if (event.target.matches("#wizard-modal")) closeWizard();
+      if (event.target.matches("#ppt-modal")) closePptModal();
+    });
+
+    document.getElementById("wizard-project-name")?.addEventListener("input", syncWizardSummary);
+    syncWizardSummary();
+    updateSurveyProgress();
+  </script>
+</body>
+</html>

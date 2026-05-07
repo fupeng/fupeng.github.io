@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InsightFlow - AI 用户反馈验证平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#4F6EF7',
+        'primary-light': '#EEF1FE',
+        'primary-dark': '#3B57D9',
+        surface: '#F7F8FC',
+        'surface-hover': '#F0F1F7',
+        ink: '#1E2A3B',
+        'ink-light': '#6B7A90',
+        'ink-lighter': '#9CA8BA',
+        border: '#E5E8F0',
+      },
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Noto Sans SC"', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .survey-screen { display: none; }
+  .survey-screen.active { display: flex; }
+  .wizard-step { display: none; }
+  .wizard-step.active { display: block; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .theme-item-body { display: none; }
+  .theme-item-body.open { display: block; }
+  .quote-detail { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .quote-detail.open { max-height: 200px; }
+
+  /* Progress bar animation */
+  .progress-fill { transition: width 0.6s ease; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: #1E2A3B; color: white; padding: 12px 20px;
+    border-radius: 8px; font-size: 14px; opacity: 0;
+    transform: translateY(10px); transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+
+  /* Sidebar active */
+  .sidebar-item.active { background: #EEF1FE; color: #4F6EF7; font-weight: 600; }
+  .sidebar-item:hover { background: #F0F1F7; }
+
+  /* Modal backdrop */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.4); display: none;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  .modal-backdrop.open { display: flex; }
+
+  /* Chat bubble animation */
+  @keyframes fadeInUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+  .chat-bubble { animation: fadeInUp 0.3s ease; }
+
+  /* Wizard template card */
+  .template-card { transition: all 0.15s ease; }
+  .template-card.selected { border-color: #4F6EF7; background: #EEF1FE; }
+  .template-card:hover { border-color: #4F6EF7; }
+
+  /* Simulated browser frame */
+  .browser-frame { border: 1px solid #E5E8F0; border-radius: 8px; overflow: hidden; }
+  .browser-bar { background: #F7F8FC; padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #E5E8F0; }
+  .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body class="bg-white text-ink antialiased">
+
+<!-- Toast container -->
+<div id="toast" class="toast"></div>
+
+<!-- ==================== PAGE 1: LANDING ==================== -->
+<div id="page-landing" class="page active">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-border z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-8">
+        <span class="text-xl font-bold text-primary tracking-tight">InsightFlow</span>
+        <div class="hidden md:flex items-center gap-6 text-sm text-ink-light">
+          <a href="#" class="hover:text-ink transition-colors">产品功能</a>
+          <a href="#" class="hover:text-ink transition-colors">定价</a>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="showPage('page-projects')" class="text-sm text-ink-light hover:text-ink px-4 py-2 transition-colors">登录</button>
+        <button onclick="showPage('page-projects')" class="text-sm text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg transition-colors font-medium">免费注册</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-20 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-block bg-primary-light text-primary text-xs font-semibold px-3 py-1 rounded-full mb-6">🚀 数小时内完成产品验证</div>
+      <h1 class="text-5xl md:text-6xl font-bold text-ink leading-tight mb-6 tracking-tight">
+        AI 用户反馈验证平台
+      </h1>
+      <p class="text-lg text-ink-light max-w-2xl mx-auto mb-10 leading-relaxed">
+        用真实用户 + AI 动态追问，数小时内完成产品验证，直接输出可执行结论
+      </p>
+      <div class="flex items-center justify-center gap-4">
+        <button onclick="showPage('page-projects')" class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl text-base font-medium transition-colors shadow-lg shadow-primary/20">
+          免费开始
+        </button>
+        <button class="border border-border hover:border-ink-lighter text-ink px-8 py-3 rounded-xl text-base font-medium transition-colors">
+          查看演示
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Cards -->
+  <section class="py-16 px-6 bg-surface">
+    <div class="max-w-5xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <div class="bg-white rounded-2xl p-8 border border-border/60 hover:border-primary/30 transition-colors">
+          <div class="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center text-2xl mb-5">🚀</div>
+          <h3 class="text-lg font-semibold mb-3">发起验证项目</h3>
+          <p class="text-sm text-ink-light leading-relaxed">5分钟配置，支持概念/页面/原型/文案多种测试类型</p>
+        </div>
+        <!-- Card 2 -->
+        <div class="bg-white rounded-2xl p-8 border border-border/60 hover:border-primary/30 transition-colors">
+          <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-2xl mb-5">🤖</div>
+          <h3 class="text-lg font-semibold mb-3">AI 动态追问</h3>
+          <p class="text-sm text-ink-light leading-relaxed">基于用户回答智能追问，挖掘真实动机与困惑</p>
+        </div>
+        <!-- Card 3 -->
+        <div class="bg-white rounded-2xl p-8 border border-border/60 hover:border-primary/30 transition-colors">
+          <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-2xl mb-5">📊</div>
+          <h3 class="text-lg font-semibold mb-3">自动生成分析报告</h3>
+          <p class="text-sm text-ink-light leading-relaxed">AI 自动聚类主题，输出高管摘要与行动建议</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="py-20 px-6">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-2xl font-bold text-center mb-4">谁在使用 InsightFlow</h2>
+      <p class="text-ink-light text-center mb-12">覆盖产品验证全流程的团队协作工具</p>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="text-center p-8">
+          <div class="w-14 h-14 bg-violet-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-5">🎯</div>
+          <h3 class="font-semibold mb-2">产品经理</h3>
+          <p class="text-sm text-ink-light leading-relaxed">验证产品概念、测试新功能方向，用数据支撑决策而非直觉</p>
+        </div>
+        <div class="text-center p-8">
+          <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-5">📈</div>
+          <h3 class="font-semibold mb-2">增长团队</h3>
+          <p class="text-sm text-ink-light leading-relaxed">A/B 测试文案、优化落地页转化，找到最高效的增长路径</p>
+        </div>
+        <div class="text-center p-8">
+          <div class="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-5">🛒</div>
+          <h3 class="font-semibold mb-2">电商团队</h3>
+          <p class="text-sm text-ink-light leading-relaxed">测试商品详情页、促销活动页效果，提升购买转化率</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Login Form -->
+  <section class="py-20 px-6 bg-surface">
+    <div class="max-w-md mx-auto">
+      <div class="bg-white rounded-2xl p-8 border border-border/60 shadow-sm">
+        <h3 class="text-xl font-bold text-center mb-6">登录 InsightFlow</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-ink-light mb-1.5">邮箱</label>
+            <input type="email" placeholder="you@company.com" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-ink-light mb-1.5">密码</label>
+            <input type="password" placeholder="••••••••" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all">
+          </div>
+          <button onclick="showPage('page-projects')" class="w-full bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg text-sm font-medium transition-colors">登录</button>
+        </div>
+        <p class="text-center text-sm text-ink-light mt-4">
+          还没有账号？<a href="#" onclick="showPage('page-projects')" class="text-primary hover:underline">免费注册</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 px-6 border-t border-border">
+    <div class="max-w-5xl mx-auto flex items-center justify-between text-sm text-ink-lighter">
+      <span>© 2026 InsightFlow</span>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-ink transition-colors">隐私政策</a>
+        <a href="#" class="hover:text-ink transition-colors">服务条款</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ==================== PAGE 2: PROJECTS ==================== -->
+<div id="page-projects" class="page">
+  <div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-60 bg-white border-r border-border flex flex-col fixed top-0 left-0 bottom-0 z-40">
+      <div class="p-5 flex items-center gap-2.5 border-b border-border">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+          <span class="text-white text-sm font-bold">I</span>
+        </div>
+        <span class="text-lg font-bold text-ink tracking-tight">InsightFlow</span>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <button onclick="showPage('page-projects')" class="sidebar-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left">
+          <span>📋</span> 我的项目
+        </button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left">
+          <span>📚</span> 模板库
+        </button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left">
+          <span>⚙️</span> 设置
+        </button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left">
+          <span>👤</span> 账户
+        </button>
+      </nav>
+      <div class="p-4 border-t border-border">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center text-sm font-medium text-primary">张</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">张明</div>
+            <div class="text-xs text-ink-lighter truncate">zhang@company.com</div>
+          </div>
+          <button onclick="showPage('page-landing')" class="text-ink-lighter hover:text-ink transition-colors" title="退出登录">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-60 bg-surface min-h-screen">
+      <div class="p-8 max-w-5xl">
+        <!-- Welcome -->
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-bold">你好，张明 👋</h1>
+            <p class="text-sm text-ink-light mt-1">管理你的用户验证项目</p>
+          </div>
+          <button onclick="openWizard()" class="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            新建项目
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-1">总项目数</div>
+            <div class="text-2xl font-bold">4</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-1">进行中</div>
+            <div class="text-2xl font-bold text-primary">1</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-1">已完成</div>
+            <div class="text-2xl font-bold text-emerald-600">2</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-1">草稿</div>
+            <div class="text-2xl font-bold text-ink-lighter">1</div>
+          </div>
+        </div>
+
+        <!-- Project Cards -->
+        <div class="grid grid-cols-2 gap-5">
+          <!-- Card 1 -->
+          <div class="bg-white rounded-xl border border-border/60 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-base mb-2 truncate">新版首页改版测试 - 2026 Q2</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-indigo-50 text-primary px-2 py-0.5 rounded-full font-medium">页面测试</span>
+                  <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">已完成</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 mb-5">
+              <div class="flex justify-between text-sm">
+                <span class="text-ink-light">样本数</span>
+                <span class="font-medium">47 人</span>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-ink-light">完成率</span>
+                  <span class="font-medium text-emerald-600">89%</span>
+                </div>
+                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full progress-fill" style="width:89%"></div>
+                </div>
+              </div>
+              <div class="text-xs text-ink-lighter">创建于 2026-04-10</div>
+            </div>
+            <div class="flex items-center gap-2 pt-4 border-t border-border/60">
+              <button onclick="showPage('page-analysis')" class="text-sm text-primary hover:text-primary-dark font-medium transition-colors">查看分析</button>
+              <span class="text-ink-lighter">·</span>
+              <button onclick="showPage('page-survey')" class="text-sm text-ink-light hover:text-ink transition-colors">预览受访者视图</button>
+              <span class="text-ink-lighter">·</span>
+              <button onclick="showToast('分享链接已复制')" class="text-sm text-ink-light hover:text-ink transition-colors">分享</button>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-white rounded-xl border border-border/60 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-base mb-2 truncate">定价页文案 A/B 测试</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-medium">文案测试</span>
+                  <span class="text-xs bg-blue-50 text-primary px-2 py-0.5 rounded-full font-medium">进行中</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 mb-5">
+              <div class="flex justify-between text-sm">
+                <span class="text-ink-light">样本数</span>
+                <span class="font-medium">23 人</span>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-ink-light">完成率</span>
+                  <span class="font-medium text-primary">61%</span>
+                </div>
+                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-primary rounded-full progress-fill" style="width:61%"></div>
+                </div>
+              </div>
+              <div class="text-xs text-ink-lighter">创建于 2026-04-18</div>
+            </div>
+            <div class="flex items-center gap-2 pt-4 border-t border-border/60">
+              <button onclick="showPage('page-analysis')" class="text-sm text-primary hover:text-primary-dark font-medium transition-colors">查看分析</button>
+              <span class="text-ink-lighter">·</span>
+              <button onclick="showToast('分享链接已复制')" class="text-sm text-ink-light hover:text-ink transition-colors">分享</button>
+              <span class="text-ink-lighter">·</span>
+              <button class="text-sm text-ink-light hover:text-ink transition-colors">···</button>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-white rounded-xl border border-border/60 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-base mb-2 truncate">注册流程原型测试</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full font-medium">原型测试</span>
+                  <span class="text-xs bg-gray-100 text-ink-light px-2 py-0.5 rounded-full font-medium">草稿</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 mb-5">
+              <div class="flex justify-between text-sm">
+                <span class="text-ink-light">样本数</span>
+                <span class="font-medium text-ink-lighter">0 人</span>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-ink-light">完成率</span>
+                  <span class="font-medium text-ink-lighter">0%</span>
+                </div>
+                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-gray-300 rounded-full progress-fill" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="text-xs text-ink-lighter">创建于 2026-04-20</div>
+            </div>
+            <div class="flex items-center gap-2 pt-4 border-t border-border/60">
+              <button class="text-sm text-primary hover:text-primary-dark font-medium transition-colors">编辑</button>
+              <span class="text-ink-lighter">·</span>
+              <button class="text-sm text-ink-light hover:text-ink transition-colors">···</button>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-white rounded-xl border border-border/60 p-6 hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-base mb-2 truncate">新功能概念验证 - AI 追问</h3>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full font-medium">概念测试</span>
+                  <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">已完成</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3 mb-5">
+              <div class="flex justify-between text-sm">
+                <span class="text-ink-light">样本数</span>
+                <span class="font-medium">31 人</span>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-ink-light">完成率</span>
+                  <span class="font-medium text-emerald-600">94%</span>
+                </div>
+                <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full progress-fill" style="width:94%"></div>
+                </div>
+              </div>
+              <div class="text-xs text-ink-lighter">创建于 2026-03-28</div>
+            </div>
+            <div class="flex items-center gap-2 pt-4 border-t border-border/60">
+              <button onclick="showPage('page-analysis')" class="text-sm text-primary hover:text-primary-dark font-medium transition-colors">查看分析</button>
+              <span class="text-ink-lighter">·</span>
+              <button onclick="showToast('分享链接已复制')" class="text-sm text-ink-light hover:text-ink transition-colors">分享</button>
+              <span class="text-ink-lighter">·</span>
+              <button class="text-sm text-ink-light hover:text-ink transition-colors">···</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Project Wizard Modal -->
+  <div id="wizard-modal" class="modal-backdrop" onclick="if(event.target===this)closeWizard()">
+    <div class="bg-white rounded-2xl w-[680px] max-h-[85vh] overflow-y-auto shadow-2xl">
+      <!-- Wizard Header -->
+      <div class="flex items-center justify-between p-6 border-b border-border">
+        <h2 class="text-lg font-bold">新建验证项目</h2>
+        <button onclick="closeWizard()" class="text-ink-light hover:text-ink transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="px-6 pt-5">
+        <div class="flex items-center gap-2">
+          <div id="step-ind-1" class="step-ind w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</div>
+          <div class="flex-1 h-0.5 bg-gray-200"><div id="step-line-1" class="h-full bg-primary transition-all" style="width:0%"></div></div>
+          <div id="step-ind-2" class="step-ind w-8 h-8 rounded-full bg-gray-200 text-ink-lighter text-xs font-bold flex items-center justify-center">2</div>
+          <div class="flex-1 h-0.5 bg-gray-200"><div id="step-line-2" class="h-full bg-primary transition-all" style="width:0%"></div></div>
+          <div id="step-ind-3" class="step-ind w-8 h-8 rounded-full bg-gray-200 text-ink-lighter text-xs font-bold flex items-center justify-center">3</div>
+          <div class="flex-1 h-0.5 bg-gray-200"><div id="step-line-3" class="h-full bg-primary transition-all" style="width:0%"></div></div>
+          <div id="step-ind-4" class="step-ind w-8 h-8 rounded-full bg-gray-200 text-ink-lighter text-xs font-bold flex items-center justify-center">4</div>
+          <div class="flex-1 h-0.5 bg-gray-200"><div id="step-line-4" class="h-full bg-primary transition-all" style="width:0%"></div></div>
+          <div id="step-ind-5" class="step-ind w-8 h-8 rounded-full bg-gray-200 text-ink-lighter text-xs font-bold flex items-center justify-center">5</div>
+        </div>
+        <div class="flex justify-between text-xs text-ink-lighter mt-2 px-1">
+          <span class="w-8 text-center">类型</span>
+          <span class="w-8 text-center">信息</span>
+          <span class="w-8 text-center">素材</span>
+          <span class="w-8 text-center">追问</span>
+          <span class="w-8 text-center">发布</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Choose Template -->
+      <div id="wizard-step-1" class="wizard-step active p-6">
+        <h3 class="font-semibold mb-1">选择测试类型</h3>
+        <p class="text-sm text-ink-light mb-5">选择最适合你验证目标的测试模板</p>
+        <div class="grid grid-cols-3 gap-3 mb-2">
+          <div class="template-card border-2 border-border rounded-xl p-4 cursor-pointer text-center" onclick="selectTemplate(this)">
+            <div class="text-2xl mb-2">💡</div>
+            <div class="text-sm font-medium">概念测试</div>
+            <div class="text-xs text-ink-lighter mt-1">验证产品概念是否被理解</div>
+          </div>
+          <div class="template-card selected border-2 border-primary bg-primary-light rounded-xl p-4 cursor-pointer text-center" onclick="selectTemplate(this)">
+            <div class="text-2xl mb-2">🖥️</div>
+            <div class="text-sm font-medium">页面测试</div>
+            <div class="text-xs text-ink-lighter mt-1">测试网页设计的用户反应</div>
+          </div>
+          <div class="template-card border-2 border-border rounded-xl p-4 cursor-pointer text-center" onclick="selectTemplate(this)">
+            <div class="text-2xl mb-2">📱</div>
+            <div class="text-sm font-medium">原型测试</div>
+            <div class="text-xs text-ink-lighter mt-1">在原型阶段收集用户反馈</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="template-card border-2 border-border rounded-xl p-4 cursor-pointer text-center" onclick="selectTemplate(this)">
+            <div class="text-2xl mb-2">✍️</div>
+            <div class="text-sm font-medium">文案/创意测试</div>
+            <div class="text-xs text-ink-lighter mt-1">对比不同文案/创意方案</div>
+          </div>
+          <div class="template-card border-2 border-border rounded-xl p-4 cursor-pointer text-center" onclick="selectTemplate(this)">
+            <div class="text-2xl mb-2">🔧</div>
+            <div class="text-sm font-medium">自定义</div>
+            <div class="text-xs text-ink-lighter mt-1">完全自定义测试流程</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Basic Info -->
+      <div id="wizard-step-2" class="wizard-step p-6">
+        <h3 class="font-semibold mb-1">填写基本信息</h3>
+        <p class="text-sm text-ink-light mb-5">定义你的验证目标和受众</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">项目名称</label>
+            <input type="text" placeholder="例如：新版首页改版测试" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">测试目标</label>
+            <textarea rows="3" placeholder="描述你想验证什么，例如：验证新版官网首屏是否能让目标用户快速理解产品价值" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 resize-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">目标用户描述</label>
+            <input type="text" placeholder="例如：产品经理、运营负责人，一线城市" class="w-full px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">期望样本数</label>
+            <input type="number" value="50" class="w-32 px-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload Stimulus -->
+      <div id="wizard-step-3" class="wizard-step p-6">
+        <h3 class="font-semibold mb-1">上传测试素材</h3>
+        <p class="text-sm text-ink-light mb-5">上传你想让用户查看的内容</p>
+        <div class="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+          <button class="stimulus-tab flex-1 py-2 text-xs font-medium rounded-md bg-white shadow-sm text-ink" onclick="switchStimulusTab(this, 0)">图片</button>
+          <button class="stimulus-tab flex-1 py-2 text-xs font-medium rounded-md text-ink-light" onclick="switchStimulusTab(this, 1)">文案</button>
+          <button class="stimulus-tab flex-1 py-2 text-xs font-medium rounded-md text-ink-light" onclick="switchStimulusTab(this, 2)">URL</button>
+          <button class="stimulus-tab flex-1 py-2 text-xs font-medium rounded-md text-ink-light" onclick="switchStimulusTab(this, 3)">A-B多版本</button>
+        </div>
+        <div class="border-2 border-dashed border-border rounded-xl p-12 text-center hover:border-primary/50 transition-colors cursor-pointer">
+          <svg class="w-10 h-10 text-ink-lighter mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <p class="text-sm text-ink-light mb-1">点击或拖拽上传文件</p>
+          <p class="text-xs text-ink-lighter">支持 PNG, JPG, PDF，最大 20MB</p>
+        </div>
+      </div>
+
+      <!-- Step 4: AI Follow-up Config -->
+      <div id="wizard-step-4" class="wizard-step p-6">
+        <h3 class="font-semibold mb-1">配置 AI 追问</h3>
+        <p class="text-sm text-ink-light mb-5">AI 会根据用户回答自动追问</p>
+        <div class="space-y-5">
+          <div class="flex items-center justify-between p-4 bg-surface rounded-xl">
+            <div>
+              <div class="font-medium text-sm">开启 AI 追问</div>
+              <div class="text-xs text-ink-light mt-0.5">AI 将根据用户回答动态生成追问</div>
+            </div>
+            <button id="ai-toggle" onclick="toggleAI()" class="w-11 h-6 bg-primary rounded-full relative transition-colors">
+              <div class="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"></div>
+            </button>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-3">追问轮数: <span id="round-val" class="text-primary">3</span> 轮</label>
+            <input type="range" min="2" max="3" value="3" id="round-slider" oninput="document.getElementById('round-val').textContent=this.value" class="w-full accent-primary">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-3">追问风格</label>
+            <div class="flex gap-3">
+              <button class="tone-btn flex-1 py-2.5 text-sm rounded-lg border-2 border-primary bg-primary-light text-primary font-medium" onclick="selectTone(this)">专业</button>
+              <button class="tone-btn flex-1 py-2.5 text-sm rounded-lg border-2 border-border text-ink-light" onclick="selectTone(this)">友好</button>
+              <button class="tone-btn flex-1 py-2.5 text-sm rounded-lg border-2 border-border text-ink-light" onclick="selectTone(this)">简洁</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Publish -->
+      <div id="wizard-step-5" class="wizard-step p-6">
+        <h3 class="font-semibold mb-1">确认并发布</h3>
+        <p class="text-sm text-ink-light mb-5">检查项目设置，然后发布分享给受访者</p>
+        <div class="bg-surface rounded-xl p-5 mb-5 space-y-3">
+          <div class="flex justify-between text-sm">
+            <span class="text-ink-light">测试类型</span>
+            <span class="font-medium">页面测试</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-ink-light">项目名称</span>
+            <span class="font-medium">新版首页改版测试</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-ink-light">期望样本</span>
+            <span class="font-medium">50 人</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-ink-light">AI 追问</span>
+            <span class="font-medium text-emerald-600">已开启（3 轮）</span>
+          </div>
+        </div>
+        <div class="mb-5">
+          <label class="block text-sm font-medium mb-1.5">分享链接</label>
+          <div class="flex gap-2">
+            <input type="text" value="https://insightflow.ai/s/xK9mQ2p" readonly class="flex-1 px-4 py-2.5 border border-border rounded-lg text-sm bg-surface text-ink-light">
+            <button onclick="showToast('链接已复制')" class="px-4 py-2.5 bg-surface border border-border rounded-lg text-sm hover:bg-surface-hover transition-colors">复制</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-5 mb-6">
+          <div class="w-28 h-28 bg-surface border border-border rounded-xl flex items-center justify-center">
+            <svg class="w-16 h-16 text-ink-lighter" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          </div>
+          <div class="text-sm text-ink-light">受访者可通过扫码或链接直接参与测试</div>
+        </div>
+      </div>
+
+      <!-- Wizard Footer -->
+      <div class="flex items-center justify-between p-6 border-t border-border">
+        <button id="wizard-prev" onclick="wizardPrev()" class="px-5 py-2.5 text-sm text-ink-light hover:text-ink transition-colors" style="visibility:hidden">上一步</button>
+        <button id="wizard-next" onclick="wizardNext()" class="px-6 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors">下一步</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: SURVEY ==================== -->
+<div id="page-survey" class="page">
+  <div class="min-h-screen bg-surface flex flex-col">
+    <!-- Survey Top Bar -->
+    <div class="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
+      <span class="text-lg font-bold text-primary tracking-tight">InsightFlow</span>
+      <div id="survey-progress-bar" class="flex-1 max-w-md mx-8">
+        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div id="survey-progress" class="h-full bg-primary rounded-full progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <span id="survey-step-label" class="text-xs text-ink-lighter">1 / 8</span>
+    </div>
+
+    <!-- Survey Screens -->
+    <div class="flex-1 flex items-center justify-center">
+      <!-- Screen 1: Intro -->
+      <div id="screen-1" class="survey-screen active flex-col items-center max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl p-10 text-center border border-border/60 w-full">
+          <div class="w-16 h-16 bg-primary-light rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h2 class="text-xl font-bold mb-3">新版首页改版测试 - 2026 Q2</h2>
+          <p class="text-sm text-ink-light leading-relaxed mb-2">我们想了解您对新版官网首屏的第一印象，帮助我们优化产品表达</p>
+          <p class="text-xs text-ink-lighter mb-8">预计用时：5-10 分钟</p>
+          <button onclick="showSurveyScreen(2)" class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl text-sm font-medium transition-colors w-full">开始</button>
+        </div>
+      </div>
+
+      <!-- Screen 2: Attributes -->
+      <div id="screen-2" class="survey-screen flex-col max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl p-8 border border-border/60 w-full">
+          <h2 class="text-lg font-bold mb-1">了解您的基本信息</h2>
+          <p class="text-sm text-ink-light mb-6">帮助我们进行分群分析</p>
+          <div class="space-y-5" id="attr-form">
+            <div>
+              <label class="block text-sm font-medium mb-2">年龄段</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="attr-option cursor-pointer"><input type="radio" name="age" value="18-24" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">18-24</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="age" value="25-34" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">25-34</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="age" value="35-44" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">35-44</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="age" value="45+" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">45+</span></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">性别</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="attr-option cursor-pointer"><input type="radio" name="gender" value="男" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">男</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="gender" value="女" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">女</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="gender" value="不愿透露" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">不愿透露</span></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">所在城市级别</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="attr-option cursor-pointer"><input type="radio" name="city" value="一线" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">一线</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="city" value="新一线" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">新一线</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="city" value="二线及以下" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">二线及以下</span></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">是否为目标用户</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="attr-option cursor-pointer"><input type="radio" name="target" value="是" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">是，我是产品/运营/增长从业者</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="target" value="否" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">否，其他职业</span></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">使用过类似产品吗</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="attr-option cursor-pointer"><input type="radio" name="exp" value="完全没用过" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">完全没用过</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="exp" value="偶尔使用" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">偶尔使用</span></label>
+                <label class="attr-option cursor-pointer"><input type="radio" name="exp" value="经常使用" class="hidden peer"><span class="inline-block px-4 py-2 text-sm border border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary-light peer-checked:text-primary transition-colors">经常使用</span></label>
+              </div>
+            </div>
+          </div>
+          <button onclick="showSurveyScreen(3)" class="w-full mt-6 bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg text-sm font-medium transition-colors">下一步</button>
+        </div>
+      </div>
+
+      <!-- Screen 3: Stimulus Display -->
+      <div id="screen-3" class="survey-screen flex-col max-w-2xl w-full px-6 py-12">
+        <div class="bg-white rounded-2xl p-8 border border-border/60 w-full">
+          <h2 class="text-lg font-bold mb-1 text-center">请仔细查看以下页面内容</h2>
+          <p class="text-sm text-ink-light mb-6 text-center">浏览后点击下方按钮继续</p>
+          <!-- Simulated browser window -->
+          <div class="browser-frame shadow-sm">
+            <div class="browser-bar">
+              <div class="browser-dot bg-red-400"></div>
+              <div class="browser-dot bg-yellow-400"></div>
+              <div class="browser-dot bg-green-400"></div>
+              <div class="flex-1 ml-3 bg-white border border-border rounded-md px-3 py-1 text-xs text-ink-lighter">https://example.com</div>
+            </div>
+            <!-- Simulated page content -->
+            <div class="p-8 bg-white">
+              <div class="text-center mb-8">
+                <div class="text-sm text-ink-light mb-4">Logo</div>
+                <h3 class="text-2xl font-bold text-ink mb-3">让数据驱动每一个产品决策</h3>
+                <p class="text-sm text-ink-light mb-6">用真实用户反馈，数小时内验证你的产品想法</p>
+                <button class="bg-primary text-white px-6 py-2 rounded-lg text-sm">免费试用</button>
+              </div>
+              <div class="grid grid-cols-3 gap-4">
+                <div class="p-4 bg-surface rounded-lg text-center">
+                  <div class="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center mx-auto mb-2 text-lg">📊</div>
+                  <div class="text-sm font-medium">数据驱动</div>
+                  <div class="text-xs text-ink-light mt-1">实时数据看板</div>
+                </div>
+                <div class="p-4 bg-surface rounded-lg text-center">
+                  <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2 text-lg">👥</div>
+                  <div class="text-sm font-medium">用户洞察</div>
+                  <div class="text-xs text-ink-light mt-1">AI 智能分析</div>
+                </div>
+                <div class="p-4 bg-surface rounded-lg text-center">
+                  <div class="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-2 text-lg">⚡</div>
+                  <div class="text-sm font-medium">快速验证</div>
+                  <div class="text-xs text-ink-light mt-1">数小时出结论</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button onclick="showSurveyScreen(4)" class="w-full mt-6 bg-primary hover:bg-primary-dark text-white py-2.5 rounded-lg text-sm font-medium transition-colors">我看完了，继续</button>
+        </div>
+      </div>
+
+      <!-- Screen 4-7: AI Chat -->
+      <div id="screen-4" class="survey-screen flex-col max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl border border-border/60 w-full flex flex-col" style="height: 520px;">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
+                <span class="text-white text-xs font-bold">AI</span>
+              </div>
+              <span class="text-sm font-medium">AI 访谈助手</span>
+            </div>
+            <span class="text-xs text-ink-lighter">第 1 轮 / 共 4 轮</span>
+          </div>
+          <div id="chat-area-4" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="chat-bubble flex gap-3">
+              <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-primary">AI</span>
+              </div>
+              <div class="bg-surface rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                <p class="text-sm leading-relaxed">看完这个页面，你觉得它主要是做什么的？</p>
+              </div>
+            </div>
+          </div>
+          <div id="options-area-4" class="p-4 border-t border-border space-y-2">
+            <button onclick="sendChatOption(4,'数据分析工具')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">数据分析工具</button>
+            <button onclick="sendChatOption(4,'用户调研平台')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">用户调研平台</button>
+            <button onclick="sendChatOption(4,'产品管理软件')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">产品管理软件</button>
+            <div class="flex gap-2">
+              <input type="text" placeholder="我来输入..." id="chat-input-4" class="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:border-primary">
+              <button onclick="sendCustomChat(4)" class="px-4 py-2.5 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-5" class="survey-screen flex-col max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl border border-border/60 w-full flex flex-col" style="height: 520px;">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center"><span class="text-white text-xs font-bold">AI</span></div>
+              <span class="text-sm font-medium">AI 访谈助手</span>
+            </div>
+            <span class="text-xs text-ink-lighter">第 2 轮 / 共 4 轮</span>
+          </div>
+          <div id="chat-area-5" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="chat-bubble flex gap-3">
+              <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold text-primary">AI</span></div>
+              <div class="bg-surface rounded-2xl rounded-tl-md px-4 py-3 max-w-xs"><p class="text-sm leading-relaxed">是哪一部分让你有这个印象？</p></div>
+            </div>
+          </div>
+          <div id="options-area-5" class="p-4 border-t border-border space-y-2">
+            <button onclick="sendChatOption(5,'标题文字')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">标题文字</button>
+            <button onclick="sendChatOption(5,'功能介绍')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">功能介绍</button>
+            <button onclick="sendChatOption(5,'整体视觉风格')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">整体视觉风格</button>
+            <div class="flex gap-2">
+              <input type="text" placeholder="我来输入..." id="chat-input-5" class="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:border-primary">
+              <button onclick="sendCustomChat(5)" class="px-4 py-2.5 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-6" class="survey-screen flex-col max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl border border-border/60 w-full flex flex-col" style="height: 520px;">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center"><span class="text-white text-xs font-bold">AI</span></div>
+              <span class="text-sm font-medium">AI 访谈助手</span>
+            </div>
+            <span class="text-xs text-ink-lighter">第 3 轮 / 共 4 轮</span>
+          </div>
+          <div id="chat-area-6" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="chat-bubble flex gap-3">
+              <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold text-primary">AI</span></div>
+              <div class="bg-surface rounded-2xl rounded-tl-md px-4 py-3 max-w-xs"><p class="text-sm leading-relaxed">如果要你改一句话来描述它，你会怎么说？</p></div>
+            </div>
+          </div>
+          <div id="options-area-6" class="p-4 border-t border-border space-y-2">
+            <button onclick="sendChatOption(6,'帮助团队做数据决策的工具')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">帮助团队做数据决策的工具</button>
+            <button onclick="sendChatOption(6,'用户反馈收集平台')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">用户反馈收集平台</button>
+            <button onclick="sendChatOption(6,'产品验证神器')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">产品验证神器</button>
+            <div class="flex gap-2">
+              <input type="text" placeholder="我来输入..." id="chat-input-6" class="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:border-primary">
+              <button onclick="sendCustomChat(6)" class="px-4 py-2.5 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="screen-7" class="survey-screen flex-col max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl border border-border/60 w-full flex flex-col" style="height: 520px;">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center"><span class="text-white text-xs font-bold">AI</span></div>
+              <span class="text-sm font-medium">AI 访谈助手</span>
+            </div>
+            <span class="text-xs text-ink-lighter">第 4 轮 / 共 4 轮</span>
+          </div>
+          <div id="chat-area-7" class="flex-1 overflow-y-auto p-6 space-y-4">
+            <div class="chat-bubble flex gap-3">
+              <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center flex-shrink-0"><span class="text-xs font-bold text-primary">AI</span></div>
+              <div class="bg-surface rounded-2xl rounded-tl-md px-4 py-3 max-w-xs"><p class="text-sm leading-relaxed">你觉得这个页面最需要改进的地方是什么？</p></div>
+            </div>
+          </div>
+          <div id="options-area-7" class="p-4 border-t border-border space-y-2">
+            <button onclick="sendChatOption(7,'标题不够清晰')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">标题不够清晰</button>
+            <button onclick="sendChatOption(7,'缺少具体案例')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">缺少具体案例</button>
+            <button onclick="sendChatOption(7,'视觉层次不明显')" class="w-full text-left px-4 py-2.5 text-sm border border-border rounded-lg hover:border-primary hover:bg-primary-light transition-colors">视觉层次不明显</button>
+            <div class="flex gap-2">
+              <input type="text" placeholder="我来输入..." id="chat-input-7" class="flex-1 px-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:border-primary">
+              <button onclick="sendCustomChat(7)" class="px-4 py-2.5 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Screen 8: Completion -->
+      <div id="screen-8" class="survey-screen flex-col items-center max-w-lg w-full px-6 py-12">
+        <div class="bg-white rounded-2xl p-10 text-center border border-border/60 w-full">
+          <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h2 class="text-xl font-bold mb-3">感谢您的参与！</h2>
+          <p class="text-sm text-ink-light leading-relaxed mb-8">您的反馈将帮助团队做出更好的产品决策</p>
+          <button onclick="showPage('page-landing')" class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-xl text-sm font-medium transition-colors">返回首页</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4: ANALYSIS ==================== -->
+<div id="page-analysis" class="page">
+  <div class="flex min-h-screen">
+    <!-- Sidebar (same) -->
+    <aside class="w-60 bg-white border-r border-border flex flex-col fixed top-0 left-0 bottom-0 z-40">
+      <div class="p-5 flex items-center gap-2.5 border-b border-border">
+        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center"><span class="text-white text-sm font-bold">I</span></div>
+        <span class="text-lg font-bold text-ink tracking-tight">InsightFlow</span>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <button onclick="showPage('page-projects')" class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left"><span>📋</span> 我的项目</button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left"><span>📚</span> 模板库</button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left"><span>⚙️</span> 设置</button>
+        <button class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-ink-light transition-colors text-left"><span>👤</span> 账户</button>
+      </nav>
+      <div class="p-4 border-t border-border">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary-light rounded-full flex items-center justify-center text-sm font-medium text-primary">张</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">张明</div>
+            <div class="text-xs text-ink-lighter truncate">zhang@company.com</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-60 bg-surface min-h-screen">
+      <div class="p-8 max-w-5xl">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-ink-light mb-4">
+          <button onclick="showPage('page-projects')" class="hover:text-ink transition-colors">我的项目</button>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          <span class="text-ink">新版首页改版测试 - 2026 Q2</span>
+        </div>
+
+        <!-- Title Row -->
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold">新版首页改版测试 - 2026 Q2</h1>
+            <span class="text-xs bg-indigo-50 text-primary px-2 py-0.5 rounded-full font-medium">页面测试</span>
+            <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">已完成</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="showToast('分享链接已复制')" class="px-4 py-2 border border-border rounded-lg text-sm hover:bg-white transition-colors">分享</button>
+            <button onclick="showPage('page-share')" class="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors">导出</button>
+          </div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-2">总样本数</div>
+            <div class="text-3xl font-bold">47</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-2">完成率</div>
+            <div class="text-3xl font-bold">89<span class="text-lg">%</span></div>
+            <div class="w-full h-1.5 bg-gray-100 rounded-full mt-3 overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full" style="width:89%"></div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-2">平均时长</div>
+            <div class="text-3xl font-bold">8<span class="text-lg">分23秒</span></div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-border/60">
+            <div class="text-sm text-ink-light mb-2">高理解比例</div>
+            <div class="text-3xl font-bold">73<span class="text-lg">%</span></div>
+          </div>
+        </div>
+
+        <!-- Theme Analysis -->
+        <div class="bg-white rounded-xl border border-border/60 p-6 mb-6">
+          <h2 class="font-bold text-base mb-5">AI 主题分析</h2>
+
+          <!-- Positive -->
+          <div class="mb-5">
+            <h3 class="text-sm font-semibold text-emerald-600 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 bg-emerald-500 rounded-full"></span> 高频正面反馈
+            </h3>
+            <div class="space-y-2" id="positive-themes">
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg hover:bg-emerald-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">+31</span>
+                    <span class="text-sm">页面视觉设计专业，有信任感</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"页面看起来很专业，第一眼就觉得是正经团队做的产品"</p>
+                    <p class="italic">"设计风格很干净，不像那些花里胡哨的营销页"</p>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg hover:bg-emerald-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">+28</span>
+                    <span class="text-sm">功能描述清晰，容易理解</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"三个功能点写得很清楚，一看就知道能做什么"</p>
+                    <p class="italic">"不像别的产品页面写的全是大词，这个好懂"</p>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg hover:bg-emerald-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">+19</span>
+                    <span class="text-sm">CTA 按钮位置合理，引导明确</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"按钮就在下面，很自然就看到了"</p>
+                    <p class="italic">"免费试用这个文案让我愿意点进去看看"</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Negative -->
+          <div class="mb-5">
+            <h3 class="text-sm font-semibold text-red-500 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 bg-red-400 rounded-full"></span> 高频负面反馈
+            </h3>
+            <div class="space-y-2">
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-red-50/50 rounded-lg hover:bg-red-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">+24</span>
+                    <span class="text-sm">首屏标题太抽象，不知道具体做什么</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"看完之后我还是不太确定这个产品具体帮我解决什么问题"</p>
+                    <p class="italic">"让数据驱动决策——太宽泛了，每个产品都在说这个"</p>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-red-50/50 rounded-lg hover:bg-red-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">+17</span>
+                    <span class="text-sm">缺少真实案例或数据支撑</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"如果能看到一个真实的使用案例，我就更放心注册了"</p>
+                    <p class="italic">"光有功能介绍没有证明，不确定是不是真的有效"</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confusion -->
+          <div class="mb-5">
+            <h3 class="text-sm font-semibold text-amber-600 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 bg-amber-400 rounded-full"></span> 困惑点
+            </h3>
+            <div class="space-y-2">
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-amber-50/50 rounded-lg hover:bg-amber-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">+14</span>
+                    <span class="text-sm">不清楚与竞品的差异在哪里</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"和 UserTesting 或者 Hotjar 有什么区别？"</p>
+                    <p class="italic">"感觉市面上已经有很多类似产品了"</p>
+                  </div>
+                </div>
+              </div>
+              <div class="theme-item">
+                <button onclick="toggleTheme(this)" class="w-full flex items-center justify-between p-3 bg-amber-50/50 rounded-lg hover:bg-amber-50 transition-colors">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">+11</span>
+                    <span class="text-sm">价格信息不透明，不知道是否免费</span>
+                  </div>
+                  <svg class="w-4 h-4 text-ink-lighter transition-transform theme-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div class="theme-item-body px-3 py-3 ml-9">
+                  <div class="space-y-2 text-sm text-ink-light">
+                    <p class="italic">"免费试用有没有限制？不知道收费多少"</p>
+                    <p class="italic">"没有定价信息，对中小企业不太友好"</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decision Drivers -->
+          <div>
+            <h3 class="text-sm font-semibold text-blue-600 mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 bg-blue-400 rounded-full"></span> 决策驱动因素
+            </h3>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3 p-3 bg-blue-50/50 rounded-lg">
+                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">+22</span>
+                <span class="text-sm">是否有同行在用</span>
+              </div>
+              <div class="flex items-center gap-3 p-3 bg-blue-50/50 rounded-lg">
+                <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">+18</span>
+                <span class="text-sm">是否支持团队协作</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segment Comparison -->
+        <div class="bg-white rounded-xl border border-border/60 p-6 mb-6">
+          <h2 class="font-bold text-base mb-5">分群对比分析</h2>
+          <div class="flex gap-1 mb-6 bg-surface rounded-lg p-1 w-fit">
+            <button class="seg-tab px-4 py-2 text-sm rounded-md bg-white shadow-sm font-medium text-ink" onclick="switchSegTab(this, 0)">新用户 vs 老用户</button>
+            <button class="seg-tab px-4 py-2 text-sm rounded-md text-ink-light" onclick="switchSegTab(this, 1)">男 vs 女</button>
+            <button class="seg-tab px-4 py-2 text-sm rounded-md text-ink-light" onclick="switchSegTab(this, 2)">一线 vs 非一线</button>
+          </div>
+          <!-- Seg content -->
+          <div id="seg-0" class="tab-content active">
+            <div class="space-y-6">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">理解率</span><span class="text-ink-light">新用户 61% vs 老用户 84%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">新用户</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:61%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">老用户</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:84%"></div></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">满意度</span><span class="text-ink-light">新用户 58% vs 老用户 79%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">新用户</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:58%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">老用户</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:79%"></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="seg-1" class="tab-content">
+            <div class="space-y-6">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">理解率</span><span class="text-ink-light">男 71% vs 女 76%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">男</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:71%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">女</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:76%"></div></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">改版意愿</span><span class="text-ink-light">男 68% vs 女 72%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">男</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:68%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">女</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:72%"></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="seg-2" class="tab-content">
+            <div class="space-y-6">
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">理解率</span><span class="text-ink-light">一线 78% vs 非一线 65%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">一线</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:78%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">非一线</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:65%"></div></div></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-2"><span class="font-medium">信任感</span><span class="text-ink-light">一线 74% vs 非一线 61%</span></div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">一线</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width:74%"></div></div></div>
+                  <div class="flex items-center gap-3"><span class="text-xs text-ink-light w-16">非一线</span><div class="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:61%"></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verbatim Quotes -->
+        <div class="bg-white rounded-xl border border-border/60 p-6 mb-6">
+          <h2 class="font-bold text-base mb-5">代表性原话</h2>
+          <div class="space-y-3" id="quotes-list">
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"看完之后我还是不太确定这个产品具体帮我解决什么问题，标题太宽泛了"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">28岁，上海，产品经理</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 1 轮（自由认知）</p>
+                  <p>补充追问：对，就像说"我们帮你成功"一样，成功是什么？太抽象了</p>
+                </div>
+              </div>
+            </div>
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"视觉很干净，感觉是个靠谱的工具，但我需要看到真实的使用案例才会注册"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">32岁，北京，增长运营</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 4 轮（改进建议）</p>
+                  <p>补充追问：如果有一个真实客户的案例数据，比如节省了多少时间，我会更有信心</p>
+                </div>
+              </div>
+            </div>
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"我以为是数据分析工具，后来才发现是用户调研的，首屏没说清楚"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">26岁，成都，产品设计师</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 1 轮（自由认知）</p>
+                  <p>补充追问：看到三个功能卡片才慢慢明白，但很多人可能到这里就走了</p>
+                </div>
+              </div>
+            </div>
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"CTA 按钮很明显，但我不知道免费试用有什么限制，有点犹豫"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">35岁，深圳，产品总监</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 4 轮（改进建议）</p>
+                  <p>补充追问：如果按钮旁边加一行小字说明免费版的限制，我可能更容易下决心</p>
+                </div>
+              </div>
+            </div>
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"功能介绍部分写得很好，三个核心价值一目了然"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">29岁，杭州，运营经理</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 2 轮（印象来源）</p>
+                  <p>补充追问：三个图标+简短描述的格式很清晰，比大段文字好读多了</p>
+                </div>
+              </div>
+            </div>
+            <div class="quote-item border border-border/60 rounded-lg p-4">
+              <p class="text-sm leading-relaxed mb-3">"如果能看到一个具体的使用场景视频就更好了，光靠文字不够直观"</p>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-ink-light">31岁，广州，增长负责人</span>
+                <button onclick="toggleQuote(this)" class="text-xs text-primary hover:text-primary-dark transition-colors">展开详情</button>
+              </div>
+              <div class="quote-detail">
+                <div class="pt-3 mt-3 border-t border-border/60 text-xs text-ink-light space-y-1">
+                  <p>回答轮次：第 4 轮（改进建议）</p>
+                  <p>补充追问：一个 30 秒的 demo 视频比任何文字都有说服力</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Summary -->
+        <div class="bg-white rounded-xl border border-border/60 p-6">
+          <h2 class="font-bold text-base mb-5">AI 分析报告</h2>
+          <div class="flex gap-1 mb-6 bg-surface rounded-lg p-1 w-fit">
+            <button class="summary-tab px-4 py-2 text-sm rounded-md bg-white shadow-sm font-medium text-ink" onclick="switchSummaryTab(this, 0)">1页高管摘要</button>
+            <button class="summary-tab px-4 py-2 text-sm rounded-md text-ink-light" onclick="switchSummaryTab(this, 1)">详细分析报告</button>
+            <button class="summary-tab px-4 py-2 text-sm rounded-md text-ink-light" onclick="switchSummaryTab(this, 2)">结论卡片</button>
+          </div>
+          <div id="summary-0" class="tab-content active">
+            <div class="prose max-w-none text-sm text-ink leading-relaxed">
+              <p>本次测试共收集 <strong>47 份有效样本</strong>，完成率 89%。核心发现：73% 的受访者能在 30 秒内理解产品大致方向，但仅 41% 能准确描述核心价值主张。首屏标题「让数据驱动每一个产品决策」被认为过于抽象（24/47人提及）。</p>
+              <p class="mt-4">建议优先修改首屏标题，增加具体使用场景描述，并在 Hero 区加入一个真实客户案例数据。</p>
+            </div>
+          </div>
+          <div id="summary-1" class="tab-content">
+            <div class="prose max-w-none text-sm text-ink leading-relaxed space-y-5">
+              <div>
+                <h3 class="font-semibold text-base mb-2">研究背景</h3>
+                <p>InsightFlow 团队计划在 2026 Q2 对官网首页进行全面改版。本次测试旨在验证新版首屏设计方案能否有效传达产品价值，帮助目标用户快速理解产品定位。</p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-base mb-2">方法论</h3>
+                <p>采用 AI 动态追问式用户访谈，共 4 轮对话。受访者首先浏览新版首屏设计，然后由 AI 根据回答实时追问，深入挖掘认知、印象和改进建议。样本覆盖一线及新一线城市的产品、运营、增长从业者。</p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-base mb-2">关键发现</h3>
+                <ul class="list-disc pl-5 space-y-2">
+                  <li><strong>认知偏差大：</strong>73% 受访者能说出大致方向，但仅 41% 能准确描述是「用户调研/反馈验证」产品，其余误判为「数据分析」「项目管理」</li>
+                  <li><strong>标题是最大障碍：</strong>24 人（51%）主动提及标题过于抽象、不够具体</li>
+                  <li><strong>视觉和布局获得正面评价：</strong>专业感评分 7.8/10，CTA 位置合理性被 19 人认可</li>
+                </ul>
+              </div>
+              <div>
+                <h3 class="font-semibold text-base mb-2">分群差异分析</h3>
+                <p>新用户理解率（61%）显著低于老用户（84%），说明首屏对新用户的引导不足。一线城市用户理解率（78%）高于非一线城市（65%），可能与互联网产品接触频率有关。</p>
+              </div>
+              <div>
+                <h3 class="font-semibold text-base mb-2">改进建议</h3>
+                <ol class="list-decimal pl-5 space-y-2">
+                  <li><strong>【高优先级】修改首屏标题</strong>：从抽象的「让数据驱动每一个产品决策」改为直接说明核心价值，如「帮助产品团队用真实用户验证想法」</li>
+                  <li><strong>【中优先级】增加客户案例区块</strong>：在 Hero 区下方加入真实客户数据（如「已帮助 500+ 团队节省 80% 调研时间」），建立信任</li>
+                  <li><strong>【低优先级】增加产品演示入口</strong>：考虑在首屏加入短视频或交互 demo，让用户直观了解产品体验</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <div id="summary-2" class="tab-content">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="border-2 border-red-200 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                  <span class="text-sm font-semibold text-red-600">立即修改</span>
+                </div>
+                <p class="text-sm leading-relaxed">首屏标题需要更具体，直接说明「帮助产品团队用真实用户验证想法」</p>
+              </div>
+              <div class="border-2 border-amber-200 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-3 h-3 bg-amber-500 rounded-full"></span>
+                  <span class="text-sm font-semibold text-amber-600">下版本优化</span>
+                </div>
+                <p class="text-sm leading-relaxed">增加客户案例区块，展示真实数据（如「已帮助 500+ 团队节省 80% 调研时间」）</p>
+              </div>
+              <div class="border-2 border-emerald-200 rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="w-3 h-3 bg-emerald-500 rounded-full"></span>
+                  <span class="text-sm font-semibold text-emerald-600">保持不变</span>
+                </div>
+                <p class="text-sm leading-relaxed">视觉设计和 CTA 布局获得普遍认可，无需大改</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5: SHARE ==================== -->
+<div id="page-share" class="page">
+  <div class="min-h-screen bg-surface">
+    <!-- Share Top Bar -->
+    <div class="bg-white border-b border-border px-6 py-3.5 flex items-center justify-between">
+      <span class="text-lg font-bold text-primary tracking-tight">InsightFlow</span>
+      <span class="text-sm font-medium text-ink">新版首页改版测试 - 2026 Q2</span>
+      <span class="text-xs text-ink-lighter">由 InsightFlow 生成</span>
+    </div>
+
+    <!-- Content -->
+    <div class="max-w-3xl mx-auto py-10 px-6">
+      <div class="bg-white rounded-2xl border border-border/60 p-10 shadow-sm" id="share-card">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold mb-2">用户验证报告</h1>
+          <p class="text-sm text-ink-light">新版首页改版测试 - 2026 Q2</p>
+          <p class="text-xs text-ink-lighter mt-1">生成日期：2026-04-22</p>
+        </div>
+
+        <div class="space-y-6 text-sm leading-relaxed">
+          <div>
+            <h3 class="font-semibold mb-1">研究目标</h3>
+            <p class="text-ink-light">验证新版官网首屏是否能让目标用户快速理解产品价值</p>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-1">样本说明</h3>
+            <p class="text-ink-light">47名受访者，89%完成率，主要为产品/运营/增长从业者，覆盖一线及新一线城市</p>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">关键发现</h3>
+            <div class="space-y-2 pl-4 border-l-2 border-primary">
+              <p class="text-ink"><strong>发现 1：</strong>73%受访者能理解产品大方向，但仅41%能准确描述核心价值</p>
+              <p class="text-ink"><strong>发现 2：</strong>首屏标题被24人（51%）认为过于抽象，是最大阻碍</p>
+              <p class="text-ink"><strong>发现 3：</strong>视觉设计和CTA获得正向评价，信任感评分7.8/10</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-1">分群差异</h3>
+            <p class="text-ink-light">新用户理解率（61%）显著低于老用户（84%），一线城市用户理解率更高</p>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">代表性用户原话</h3>
+            <div class="space-y-3 pl-4 border-l-2 border-emerald-300">
+              <p class="text-ink italic">"看完之后我还是不太确定这个产品具体帮我解决什么问题，标题太宽泛了"</p>
+              <p class="text-ink italic">"视觉很干净，感觉是个靠谱的工具，但我需要看到真实的使用案例才会注册"</p>
+            </div>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">行动建议</h3>
+            <ol class="list-decimal pl-5 space-y-1.5 text-ink-light">
+              <li><strong class="text-ink">【高优先级】</strong>修改首屏标题，增加具体场景描述</li>
+              <li><strong class="text-ink">【中优先级】</strong>Hero区增加真实客户数据或案例</li>
+              <li><strong class="text-ink">【低优先级】</strong>考虑增加产品演示视频入口</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Buttons -->
+      <div class="flex items-center justify-center gap-4 mt-8">
+        <button onclick="exportPDF(this)" class="px-6 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          导出 PDF
+        </button>
+        <button onclick="openPPTModal()" class="px-6 py-2.5 border border-border hover:bg-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          导出 PPT 文本
+        </button>
+        <button onclick="showToast('链接已复制到剪贴板')" class="px-6 py-2.5 border border-border hover:bg-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          复制只读链接
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PPT Modal -->
+  <div id="ppt-modal" class="modal-backdrop" onclick="if(event.target===this)closePPTModal()">
+    <div class="bg-white rounded-2xl w-[700px] max-h-[80vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between p-6 border-b border-border">
+        <h2 class="text-lg font-bold">PPT 结构化文本预览</h2>
+        <button onclick="closePPTModal()" class="text-ink-light hover:text-ink transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-6 space-y-6 text-sm">
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 1</div>
+          <h3 class="font-bold text-base">新版首页改版测试 - 2026 Q2</h3>
+          <p class="text-xs text-ink-light mt-1">用户验证报告 · 2026-04-22</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 2</div>
+          <h3 class="font-bold text-base">研究目标</h3>
+          <p class="text-xs text-ink mt-2">验证新版官网首屏是否能让目标用户快速理解产品价值</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 3</div>
+          <h3 class="font-bold text-base">样本说明</h3>
+          <p class="text-xs text-ink mt-2">47名受访者，89%完成率，主要为产品/运营/增长从业者，覆盖一线及新一线城市</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 4</div>
+          <h3 class="font-bold text-base">关键发现 1：认知偏差</h3>
+          <p class="text-xs text-ink mt-2">73%受访者能理解产品大方向，但仅41%能准确描述核心价值</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 5</div>
+          <h3 class="font-bold text-base">关键发现 2：标题阻碍</h3>
+          <p class="text-xs text-ink mt-2">首屏标题被24人（51%）认为过于抽象，是最大认知阻碍</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 6</div>
+          <h3 class="font-bold text-base">关键发现 3：正面反馈</h3>
+          <p class="text-xs text-ink mt-2">视觉设计和CTA获得正向评价，信任感评分7.8/10</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 7</div>
+          <h3 class="font-bold text-base">分群差异 & 用户原话</h3>
+          <p class="text-xs text-ink mt-2">新用户理解率（61%）vs 老用户（84%）<br>"看完之后我还是不太确定这个产品具体帮我解决什么问题"<br>"视觉很干净，感觉是个靠谱的工具"</p>
+        </div>
+        <div class="border border-border rounded-lg p-4">
+          <div class="text-xs text-ink-lighter mb-2">幻灯片 8</div>
+          <h3 class="font-bold text-base">行动建议</h3>
+          <p class="text-xs text-ink mt-2">1.【高优先级】修改首屏标题，增加具体场景描述<br>2.【中优先级】Hero区增加真实客户数据或案例<br>3.【低优先级】考虑增加产品演示视频入口</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 p-6 border-t border-border">
+        <button onclick="showToast('文本已复制到剪贴板');closePPTModal()" class="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors">复制全部文本</button>
+        <button onclick="closePPTModal()" class="px-5 py-2.5 border border-border text-sm rounded-lg hover:bg-surface transition-colors">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+// ===== Page Navigation =====
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ===== Toast =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== Wizard =====
+let wizardStep = 1;
+function openWizard() {
+  wizardStep = 1;
+  updateWizard();
+  document.getElementById('wizard-modal').classList.add('open');
+}
+function closeWizard() {
+  document.getElementById('wizard-modal').classList.remove('open');
+}
+function updateWizard() {
+  for (let i = 1; i <= 5; i++) {
+    const step = document.getElementById('wizard-step-' + i);
+    const ind = document.getElementById('step-ind-' + i);
+    step.classList.toggle('active', i === wizardStep);
+    if (i <= wizardStep) {
+      ind.className = 'step-ind w-8 h-8 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center';
+    } else {
+      ind.className = 'step-ind w-8 h-8 rounded-full bg-gray-200 text-ink-lighter text-xs font-bold flex items-center justify-center';
+    }
+  }
+  for (let i = 1; i <= 4; i++) {
+    const line = document.getElementById('step-line-' + i);
+    line.style.width = i < wizardStep ? '100%' : '0%';
+  }
+  document.getElementById('wizard-prev').style.visibility = wizardStep === 1 ? 'hidden' : 'visible';
+  const nextBtn = document.getElementById('wizard-next');
+  if (wizardStep === 5) {
+    nextBtn.textContent = '发布';
+    nextBtn.onclick = () => { closeWizard(); showToast('项目已发布！'); };
+  } else {
+    nextBtn.textContent = '下一步';
+    nextBtn.onclick = wizardNext;
+  }
+}
+function wizardNext() {
+  if (wizardStep < 5) { wizardStep++; updateWizard(); }
+}
+function wizardPrev() {
+  if (wizardStep > 1) { wizardStep--; updateWizard(); }
+}
+
+function selectTemplate(el) {
+  el.closest('.wizard-step').querySelectorAll('.template-card').forEach(c => {
+    c.classList.remove('selected', 'border-primary', 'bg-primary-light');
+    c.classList.add('border-border');
+  });
+  el.classList.add('selected', 'border-primary', 'bg-primary-light');
+  el.classList.remove('border-border');
+}
+
+function switchStimulusTab(btn, idx) {
+  btn.closest('.flex').querySelectorAll('.stimulus-tab').forEach(t => {
+    t.classList.remove('bg-white', 'shadow-sm', 'text-ink');
+    t.classList.add('text-ink-light');
+  });
+  btn.classList.add('bg-white', 'shadow-sm', 'text-ink');
+  btn.classList.remove('text-ink-light');
+}
+
+function toggleAI() {
+  const toggle = document.getElementById('ai-toggle');
+  const dot = toggle.querySelector('div');
+  if (toggle.classList.contains('bg-primary')) {
+    toggle.classList.remove('bg-primary');
+    toggle.classList.add('bg-gray-300');
+    dot.classList.remove('right-0.5');
+    dot.classList.add('left-0.5');
+  } else {
+    toggle.classList.add('bg-primary');
+    toggle.classList.remove('bg-gray-300');
+    dot.classList.add('right-0.5');
+    dot.classList.remove('left-0.5');
+  }
+}
+
+function selectTone(btn) {
+  btn.closest('.flex').querySelectorAll('.tone-btn').forEach(t => {
+    t.classList.remove('border-primary', 'bg-primary-light', 'text-primary', 'font-medium');
+    t.classList.add('border-border', 'text-ink-light');
+  });
+  btn.classList.add('border-primary', 'bg-primary-light', 'text-primary', 'font-medium');
+  btn.classList.remove('border-border', 'text-ink-light');
+}
+
+// ===== Survey =====
+function showSurveyScreen(n) {
+  document.querySelectorAll('.survey-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+  const progress = ((n - 1) / 7) * 100;
+  document.getElementById('survey-progress').style.width = progress + '%';
+  document.getElementById('survey-step-label').textContent = n + ' / 8';
+}
+
+function sendChatOption(screenNum, text) {
+  const chatArea = document.getElementById('chat-area-' + screenNum);
+  const optionsArea = document.getElementById('options-area-' + screenNum);
+
+  // Add user message
+  const userBubble = document.createElement('div');
+  userBubble.className = 'chat-bubble flex justify-end';
+  userBubble.innerHTML = '<div class="bg-primary text-white rounded-2xl rounded-tr-md px-4 py-3 max-w-xs"><p class="text-sm">' + text + '</p></div>';
+  chatArea.appendChild(userBubble);
+
+  // Disable options
+  optionsArea.querySelectorAll('button').forEach(b => {
+    b.disabled = true;
+    b.classList.add('opacity-50', 'cursor-not-allowed');
+  });
+
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  // Auto advance after delay
+  setTimeout(() => {
+    if (screenNum < 7) {
+      showSurveyScreen(screenNum + 1);
+    } else {
+      showSurveyScreen(8);
+    }
+  }, 800);
+}
+
+function sendCustomChat(screenNum) {
+  const input = document.getElementById('chat-input-' + screenNum);
+  const text = input.value.trim();
+  if (!text) return;
+  sendChatOption(screenNum, text);
+  input.value = '';
+}
+
+// ===== Analysis Page =====
+function toggleTheme(btn) {
+  const item = btn.closest('.theme-item');
+  const body = item.querySelector('.theme-item-body');
+  const arrow = btn.querySelector('.theme-arrow');
+  body.classList.toggle('open');
+  arrow.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+function toggleQuote(btn) {
+  const detail = btn.closest('.quote-item').querySelector('.quote-detail');
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open');
+  btn.textContent = isOpen ? '展开详情' : '收起详情';
+}
+
+function switchSegTab(btn, idx) {
+  btn.closest('.flex').querySelectorAll('.seg-tab').forEach(t => {
+    t.classList.remove('bg-white', 'shadow-sm', 'font-medium', 'text-ink');
+    t.classList.add('text-ink-light');
+  });
+  btn.classList.add('bg-white', 'shadow-sm', 'font-medium', 'text-ink');
+  btn.classList.remove('text-ink-light');
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('seg-' + i).classList.toggle('active', i === idx);
+  }
+}
+
+function switchSummaryTab(btn, idx) {
+  btn.closest('.flex').querySelectorAll('.summary-tab').forEach(t => {
+    t.classList.remove('bg-white', 'shadow-sm', 'font-medium', 'text-ink');
+    t.classList.add('text-ink-light');
+  });
+  btn.classList.add('bg-white', 'shadow-sm', 'font-medium', 'text-ink');
+  btn.classList.remove('text-ink-light');
+  for (let i = 0; i < 3; i++) {
+    document.getElementById('summary-' + i).classList.toggle('active', i === idx);
+  }
+}
+
+// ===== Share Page =====
+function exportPDF(btn) {
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> 生成中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    showToast('PDF 已生成，请查收邮件');
+  }, 1500);
+}
+
+function openPPTModal() {
+  document.getElementById('ppt-modal').classList.add('open');
+}
+function closePPTModal() {
+  document.getElementById('ppt-modal').classList.remove('open');
+}
+</script>
+
+</body>
+</html>
